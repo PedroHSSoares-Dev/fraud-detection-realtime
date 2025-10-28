@@ -1,0 +1,48 @@
+================================================================================
+RELATÓRIO DE ANÁLISE EXPLORATÓRIA - FRAUD DETECTION
+================================================================================
+
+📊 ESTATÍSTICAS GERAIS:
+  - Total de transações: 300,135
+  - Transações normais: 299,400 (99.76%)
+  - Transações fraudulentas: 735 (0.24%)
+
+🎯 DISTRIBUIÇÃO POR TIPO DE FRAUDE:
+  - card_testing: 255 fraudes
+  - teleport: 120 fraudes
+  - sudden_spending: 120 fraudes
+  - risky_merchant: 120 fraudes
+  - unusual_time: 120 fraudes
+
+📈 DISTRIBUIÇÃO POR DIFICULDADE:
+  - easy: 350 fraudes
+  - medium: 275 fraudes
+  - hard: 110 fraudes
+
+🔍 COMPARAÇÃO FRAUDE VS NORMAL (Features Médias):
+  - amount:
+      Normal: 467.94 | Fraude: 3134.36 | Diferença: +569.8%
+  - time_since_last_tx_sec:
+      Normal: 1424740.84 | Fraude: 150558.55 | Diferença: -89.4%
+  - user_avg_amount_7d:
+      Normal: 472.61 | Fraude: 839.37 | Diferença: +77.6%
+  - user_std_amount_7d:
+      Normal: 267.56 | Fraude: 1277.39 | Diferença: +377.4%
+  - distance_from_home_km:
+      Normal: 927.35 | Fraude: 3608.06 | Diferença: +289.1%
+  - velocity_kmh:
+      Normal: 16.38 | Fraude: 1119.64 | Diferença: +6733.4%
+  - is_unusual_hour:
+      Normal: 0.07 | Fraude: 0.21 | Diferença: +196.2%
+  - spending_zscore:
+      Normal: 0.00 | Fraude: 0.63 | Diferença: +130694.7%
+  - hour_of_day:
+      Normal: 14.69 | Fraude: 12.99 | Diferença: -11.6%
+  - day_of_week:
+      Normal: 2.99 | Fraude: 3.09 | Diferença: +3.1%
+  - is_weekend:
+      Normal: 0.29 | Fraude: 0.30 | Diferença: +4.8%
+
+================================================================================
+✓ ANÁLISE CONCLUÍDA!
+================================================================================
