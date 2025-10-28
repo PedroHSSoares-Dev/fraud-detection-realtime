@@ -10,9 +10,9 @@ RELATÓRIO DE ANÁLISE EXPLORATÓRIA - FRAUD DETECTION
 🎯 DISTRIBUIÇÃO POR TIPO DE FRAUDE:
   - card_testing: 255 fraudes
   - teleport: 120 fraudes
-  - sudden_spending: 120 fraudes
-  - risky_merchant: 120 fraudes
   - unusual_time: 120 fraudes
+  - risky_merchant: 120 fraudes
+  - sudden_spending: 120 fraudes
 
 📈 DISTRIBUIÇÃO POR DIFICULDADE:
   - easy: 350 fraudes
@@ -21,27 +21,27 @@ RELATÓRIO DE ANÁLISE EXPLORATÓRIA - FRAUD DETECTION
 
 🔍 COMPARAÇÃO FRAUDE VS NORMAL (Features Médias):
   - amount:
-      Normal: 467.94 | Fraude: 3134.36 | Diferença: +569.8%
+      Normal: 467.94 | Fraude: 3094.61 | Diferença: +561.3%
   - time_since_last_tx_sec:
-      Normal: 1424740.84 | Fraude: 150558.55 | Diferença: -89.4%
+      Normal: 1424725.36 | Fraude: 149846.08 | Diferença: -89.5%
   - user_avg_amount_7d:
-      Normal: 472.61 | Fraude: 839.37 | Diferença: +77.6%
+      Normal: 472.27 | Fraude: 904.80 | Diferença: +91.6%
   - user_std_amount_7d:
-      Normal: 267.56 | Fraude: 1277.39 | Diferença: +377.4%
+      Normal: 266.59 | Fraude: 1321.18 | Diferença: +395.6%
   - distance_from_home_km:
-      Normal: 927.35 | Fraude: 3608.06 | Diferença: +289.1%
+      Normal: 927.35 | Fraude: 2841.99 | Diferença: +206.5%
   - velocity_kmh:
-      Normal: 16.38 | Fraude: 1119.64 | Diferença: +6733.4%
+      Normal: 16.35 | Fraude: 1071.27 | Diferença: +6453.9%
   - is_unusual_hour:
-      Normal: 0.07 | Fraude: 0.21 | Diferença: +196.2%
+      Normal: 0.07 | Fraude: 0.23 | Diferença: +217.1%
   - spending_zscore:
-      Normal: 0.00 | Fraude: 0.63 | Diferença: +130694.7%
+      Normal: 0.00 | Fraude: 0.63 | Diferença: +135194.9%
   - hour_of_day:
-      Normal: 14.69 | Fraude: 12.99 | Diferença: -11.6%
+      Normal: 14.69 | Fraude: 12.97 | Diferença: -11.7%
   - day_of_week:
-      Normal: 2.99 | Fraude: 3.09 | Diferença: +3.1%
+      Normal: 2.99 | Fraude: 3.14 | Diferença: +4.9%
   - is_weekend:
-      Normal: 0.29 | Fraude: 0.30 | Diferença: +4.8%
+      Normal: 0.29 | Fraude: 0.30 | Diferença: +3.4%
 
 ================================================================================
 ✓ ANÁLISE CONCLUÍDA!

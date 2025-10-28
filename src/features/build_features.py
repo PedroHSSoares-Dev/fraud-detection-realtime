@@ -323,6 +323,15 @@ def get_feature_columns() -> list:
     """
     Retorna lista de colunas de features para treino do modelo.
     
+    IMPORTANTE: NÃO incluir colunas que podem vazar informação:
+    - transaction_id (identificador único, sem valor preditivo)
+    - user_id (identificador único, sem valor preditivo)
+    - timestamp (usar apenas features derivadas: hour_of_day, day_of_week)
+    - merchant_name (muitos valores únicos, usar merchant_category)
+    - is_fraud (target!)
+    - fraud_type (target!)
+    - fraud_difficulty (target!)
+    
     Esta lista será usada para:
     - Treinar o Isolation Forest
     - Fazer predições na API

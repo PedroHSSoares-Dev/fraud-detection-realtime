@@ -106,7 +106,8 @@ def inject_teleport_fraud(df: pd.DataFrame, n_samples: int, difficulty: str) -> 
         fraud_tx['is_fraud'] = 1
         fraud_tx['fraud_type'] = 'teleport'
         fraud_tx['fraud_difficulty'] = difficulty
-        fraud_tx['transaction_id'] = f'FRAUD_TELEPORT_{difficulty.upper()}_{i:04d}'
+        # ID sequencial normal (não vazar informação!)
+        fraud_tx['transaction_id'] = f'TX{len(df) + i:010d}'
         
         fraud_transactions.append(fraud_tx)
     
@@ -188,7 +189,7 @@ def inject_sudden_spending_fraud(df: pd.DataFrame, n_samples: int, difficulty: s
         fraud_tx['is_fraud'] = 1
         fraud_tx['fraud_type'] = 'sudden_spending'
         fraud_tx['fraud_difficulty'] = difficulty
-        fraud_tx['transaction_id'] = f'FRAUD_SPENDING_{difficulty.upper()}_{i:04d}'
+        fraud_tx['transaction_id'] = f'TX{len(df) + i:010d}'
         
         fraud_transactions.append(fraud_tx)
     
@@ -275,7 +276,7 @@ def inject_card_testing_fraud(df: pd.DataFrame, n_samples: int, difficulty: str)
             fraud_tx['is_fraud'] = 1
             fraud_tx['fraud_type'] = 'card_testing'
             fraud_tx['fraud_difficulty'] = difficulty
-            fraud_tx['transaction_id'] = f'FRAUD_TESTING_{difficulty.upper()}_{i:04d}_{test_num:02d}'
+            fraud_tx['transaction_id'] = f'TX{len(df) + (i * n_tests_per_sequence) + test_num:010d}'
             
             fraud_transactions.append(fraud_tx)
     
@@ -359,7 +360,7 @@ def inject_unusual_time_fraud(df: pd.DataFrame, n_samples: int, difficulty: str)
         fraud_tx['is_fraud'] = 1
         fraud_tx['fraud_type'] = 'unusual_time'
         fraud_tx['fraud_difficulty'] = difficulty
-        fraud_tx['transaction_id'] = f'FRAUD_TIME_{difficulty.upper()}_{i:04d}'
+        fraud_tx['transaction_id'] = f'TX{len(df) + i:010d}'
         
         fraud_transactions.append(fraud_tx)
     
@@ -451,7 +452,7 @@ def inject_risky_merchant_fraud(df: pd.DataFrame, n_samples: int, difficulty: st
         fraud_tx['is_fraud'] = 1
         fraud_tx['fraud_type'] = 'risky_merchant'
         fraud_tx['fraud_difficulty'] = difficulty
-        fraud_tx['transaction_id'] = f'FRAUD_MERCHANT_{difficulty.upper()}_{i:04d}'
+        fraud_tx['transaction_id'] = f'TX{len(df) + i:010d}'
         
         fraud_transactions.append(fraud_tx)
     
