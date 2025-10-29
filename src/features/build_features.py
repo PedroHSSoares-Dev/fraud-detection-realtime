@@ -51,8 +51,12 @@ def calculate_user_spending_stats(df: pd.DataFrame, window_days: int = 7) -> Tup
         lambda x: x.rolling(window=window_days, min_periods=1).std()
     )
     
-    df['user_avg_amount_7d'] = df['user_avg_amount_7d'].fillna(df['amount'].mean())
-    df['user_std_amount_7d'] = df['user_std_amount_7d'].fillna(df['amount'].std())
+    # Preenche NaNs com 0 para desvio padrão (sem variância quando <2 pontos) ao invés de df['amount'].std()
+    df['user_std_amount_7d'] = df['user_std_amount_7d'].fillna(0)
+    
+    # Para a média, preencher com a média global se necessário (embora improvável com min_periods=1)
+    global_mean = df['amount'].mean() if not df.empty else 0
+    df['user_avg_amount_7d'] = df['user_avg_amount_7d'].fillna(global_mean)
     
     return df['user_avg_amount_7d'], df['user_std_amount_7d']
 
@@ -151,90 +155,74 @@ def calculate_rapid_sequence_flag(df: pd.DataFrame, threshold_seconds: int = 60)
 def calculate_tx_count_rolling_window(df: pd.DataFrame, window_minutes: int = 60) -> pd.Series:
     """
     Conta quantas transações o usuário fez na última N minutos.
-    DETECTA: Card testing (múltiplas transações em janela curta)
     """
     df = df.copy()
     df['timestamp'] = pd.to_datetime(df['timestamp'])
     df = df.sort_values(['user_id', 'timestamp'])
     
-    def count_recent_txs(group):
-        timestamps = group['timestamp']
-        counts = []
-        
-        for idx, current_time in enumerate(timestamps):
-            time_threshold = current_time - timedelta(minutes=window_minutes)
-            recent_txs = timestamps[(timestamps < current_time) & (timestamps >= time_threshold)]
-            counts.append(len(recent_txs))
-        
-        return pd.Series(counts, index=group.index)
+    result = []
     
-    tx_counts = df.groupby('user_id').apply(count_recent_txs, include_groups=False)
+    for user_id, group in df.groupby('user_id'):
+        timestamps = group['timestamp'].values
+        for idx in range(len(timestamps)):
+            current_time = timestamps[idx]
+            time_threshold = current_time - pd.Timedelta(minutes=window_minutes)
+            recent_mask = (timestamps < current_time) & (timestamps >= time_threshold)
+            result.append(int(recent_mask.sum()))
     
-    if isinstance(tx_counts.index, pd.MultiIndex):
-        tx_counts = tx_counts.droplevel(0)
-    
-    return tx_counts
+    return pd.Series(result, index=df.index)
 
 
 def calculate_distinct_merchants_rolling_window(df: pd.DataFrame, window_minutes: int = 60) -> pd.Series:
     """
     Conta quantas lojas diferentes o usuário usou na última N minutos.
-    DETECTA: Card testing (fraudador testa em múltiplas lojas)
     """
     df = df.copy()
     df['timestamp'] = pd.to_datetime(df['timestamp'])
     df = df.sort_values(['user_id', 'timestamp'])
     
-    def count_distinct_merchants(group):
-        timestamps = group['timestamp']
-        merchants = group['merchant_name']
-        counts = []
+    result = []
+    
+    for user_id, group in df.groupby('user_id'):
+        timestamps = group['timestamp'].values
+        merchants = group['merchant_name'].values
         
-        for idx, current_time in enumerate(timestamps):
-            time_threshold = current_time - timedelta(minutes=window_minutes)
+        for idx in range(len(timestamps)):
+            current_time = timestamps[idx]
+            time_threshold = current_time - pd.Timedelta(minutes=window_minutes)
             recent_mask = (timestamps < current_time) & (timestamps >= time_threshold)
-            recent_merchants = merchants[recent_mask]
-            counts.append(recent_merchants.nunique())
-        
-        return pd.Series(counts, index=group.index)
+            
+            if recent_mask.sum() > 0:
+                recent_merchants = merchants[recent_mask]
+                result.append(len(set(recent_merchants)))
+            else:
+                result.append(0)
     
-    distinct_counts = df.groupby('user_id').apply(count_distinct_merchants, include_groups=False)
-    
-    if isinstance(distinct_counts.index, pd.MultiIndex):
-        distinct_counts = distinct_counts.droplevel(0)
-    
-    return distinct_counts
+    return pd.Series(result, index=df.index)
 
 
 def calculate_new_merchant_category_flag(df: pd.DataFrame) -> pd.Series:
     """
-    Flag (0/1) indicando se esta é a primeira vez que o usuário usa esta categoria de merchant.
-    DETECTA: Padrão de compra incomum
+    Flag (0/1) indicando se esta é a primeira vez que o usuário usa esta categoria.
     """
     df = df.copy()
     df['timestamp'] = pd.to_datetime(df['timestamp'])
     df = df.sort_values(['user_id', 'timestamp'])
     
-    def check_new_category(group):
-        categories = group['merchant_category']
-        flags = []
+    result = []
+    
+    for user_id, group in df.groupby('user_id'):
+        categories = group['merchant_category'].values
         seen_categories = set()
         
         for category in categories:
             if category not in seen_categories:
-                flags.append(1)
+                result.append(1)
                 seen_categories.add(category)
             else:
-                flags.append(0)
-        
-        return pd.Series(flags, index=group.index)
+                result.append(0)
     
-    new_category_flags = df.groupby('user_id').apply(check_new_category, include_groups=False)
-    
-    if isinstance(new_category_flags.index, pd.MultiIndex):
-        new_category_flags = new_category_flags.droplevel(0)
-    
-    return new_category_flags
+    return pd.Series(result, index=df.index)
 
 
 def calculate_value_anomaly_flag(df: pd.DataFrame) -> pd.Series:
