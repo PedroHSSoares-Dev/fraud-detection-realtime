@@ -1,0 +1,17 @@
+amount
+time_since_last_tx_sec
+user_avg_amount_7d
+user_std_amount_7d
+distance_from_home_km
+velocity_kmh
+is_unusual_hour
+spending_zscore
+hour_of_day
+day_of_week
+is_weekend
+tx_count_rolling_1h_user
+distinct_merchants_rolling_1h_user
+is_new_merchant_category_user
+rapid_sequence_flag
+value_anomaly_flag
+combined_anomaly_score
