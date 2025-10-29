@@ -1,0 +1,17 @@
+# Core API
+flask==3.0.0
+flask-cors==4.0.0
+gunicorn==21.2.0
+
+# Validação
+pydantic==2.9.0
+
+# ML & Data Science
+scikit-learn==1.3.2
+pandas==2.1.4
+numpy==1.26.2
+joblib==1.3.2
+
+# Feature Engineering
+geopy==2.4.1
+python-dateutil==2.9.0
