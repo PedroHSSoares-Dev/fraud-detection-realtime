@@ -325,10 +325,6 @@ if __name__ == '__main__':
     # Gerar transações normais
     generator.df = generator.generate_normal_transactions()
     
-    # TODO: Injetar fraudes (próxima parte)
-    # generator.df = inject_teleport_fraud(generator.df, 400, 'mixed')
-    # ... outras fraudes
-    
     # Salvar dados
     generator.save_data()
     

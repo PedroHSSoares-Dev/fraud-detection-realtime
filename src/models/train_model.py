@@ -47,15 +47,18 @@ def load_processed_data():
     ]
     
     df = None
-    for path in possible_paths:
-        if os.path.exists(path):
-            print(f"  ✓ Arquivo encontrado: {path}")
-            df = pd.read_csv(path)
-            break
+    # CORREÇÃO: Usar caminhos relativos ao script para robustez
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(os.path.dirname(script_dir))
+    data_path = os.path.join(project_root, 'data', 'processed', 'transactions_with_features.csv')
+
+    if os.path.exists(data_path):
+        print(f"  ✓ Arquivo encontrado: {data_path}")
+        df = pd.read_csv(data_path)
     
     if df is None:
-        print("\n❌ ERRO: Arquivo de features não encontrado!")
-        print("Execute 'python eda_fraud_analysis.py' primeiro!")
+        print(f"\n❌ ERRO: Arquivo de features não encontrado em: {data_path}")
+        print("Execute 'python src/eda_fraud_analysis.py' primeiro!")
         sys.exit(1)
     
     print(f"  ✓ {len(df):,} transações carregadas")
@@ -154,17 +157,23 @@ def train_isolation_forest(X_train, contamination=0.01):
     return model, scaler
 
 
-def save_model(model, scaler, output_dir='../models'):
+def save_model(model, scaler):
     """
     Salva modelo e scaler para uso posterior.
     
     Args:
         model: Modelo treinado
         scaler: StandardScaler ajustado
-        output_dir: Diretório de saída
     """
     print(f"\n💾 Salvando modelo...")
-    
+
+    # --- INÍCIO DA CORREÇÃO ---
+    # Constrói o caminho para a pasta 'models' na raiz do projeto
+    script_dir = os.path.dirname(os.path.abspath(__file__))
+    project_root = os.path.dirname(os.path.dirname(script_dir))
+    output_dir = os.path.join(project_root, 'models')
+    # --- FIM DA CORREÇÃO ---
+
     # Criar diretório se não existir
     os.makedirs(output_dir, exist_ok=True)
     
@@ -224,7 +233,7 @@ def quick_evaluation(model, scaler, X_test, y_test):
     print(f"     - {false_positives:,} transações normais marcadas como fraude")
     
     print(f"\n  💡 Para análise detalhada por tipo e dificuldade:")
-    print(f"     Execute: python evaluate_model.py")
+    print(f"     Execute: python src/models/evaluate_model.py")
 
 
 def main():
@@ -239,7 +248,7 @@ def main():
     # 3. Treinar modelo
     model, scaler = train_isolation_forest(X_train)
     
-    # 4. Salvar modelo
+    # 4. Salvar modelo (agora salva no local correto)
     save_model(model, scaler)
     
     # 5. Avaliação rápida
@@ -249,9 +258,9 @@ def main():
     print("✓ TREINO CONCLUÍDO COM SUCESSO!")
     print("=" * 80)
     print("\n📌 Próximos passos:")
-    print("  1. Avaliação detalhada: python evaluate_model.py")
-    print("  2. Testar predições: python predict.py")
-    print("  3. Deploy na API (Fase 5)")
+    print("  1. Avaliação detalhada: python src/models/evaluate_model.py")
+    print("  2. Reconstruir imagem Docker: docker build -t fraud-api .")
+    print("  3. Rodar contêiner: docker run -p 5000:5000 fraud-api")
 
 
 if __name__ == '__main__':
