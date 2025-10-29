@@ -2,7 +2,7 @@
 schemas.py - Schemas de validação para API
 """
 
-from pydantic import BaseModel, Field, validator
+from pydantic import BaseModel, Field, field_validator
 from typing import Optional
 from datetime import datetime
 
@@ -19,13 +19,14 @@ class TransactionInput(BaseModel):
     longitude: float = Field(..., ge=-180, le=180, description="Longitude")
     timestamp: Optional[str] = Field(None, description="Timestamp (ISO format)")
     
-    @validator('timestamp', pre=True, always=True)
+    @field_validator('timestamp', mode='before')
+    @classmethod
     def set_timestamp(cls, v):
         """Se timestamp não fornecido, usar timestamp atual."""
         return v or datetime.now().isoformat()
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {  # <-- Changed from schema_extra
             "example": {
                 "user_id": "user_12345",
                 "amount": 1500.00,
@@ -49,7 +50,7 @@ class PredictionOutput(BaseModel):
     features: dict
     
     class Config:
-        schema_extra = {
+        json_schema_extra = {  # <-- Changed from schema_extra
             "example": {
                 "anomaly_score": -0.15,
                 "is_anomaly": True,
