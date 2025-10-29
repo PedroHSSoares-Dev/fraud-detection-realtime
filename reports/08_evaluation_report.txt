@@ -1,0 +1,49 @@
+================================================================================
+RELATÓRIO DE AVALIAÇÃO - ISOLATION FOREST
+================================================================================
+
+🎯 RECALL POR TIPO DE FRAUDE:
+
+  risky_merchant:
+    - Detectadas: 67/83
+    - Recall: 80.7%
+
+  unusual_time:
+    - Detectadas: 22/83
+    - Recall: 26.5%
+
+  sudden_spending:
+    - Detectadas: 58/82
+    - Recall: 70.7%
+
+  teleport:
+    - Detectadas: 66/79
+    - Recall: 83.5%
+
+  card_testing:
+    - Detectadas: 145/173
+    - Recall: 83.8%
+
+📈 RECALL POR DIFICULDADE:
+
+  EASY:
+    - Detectadas: 210/241
+    - Recall: 87.1%
+
+  MEDIUM:
+    - Detectadas: 122/183
+    - Recall: 66.7%
+
+  HARD:
+    - Detectadas: 26/76
+    - Recall: 34.2%
+
+⚠️  FALSOS POSITIVOS:
+  - Total: 1,781
+
+🏆 CONCLUSÃO:
+  - Recall Geral: 71.6%
+  - Melhor Performance: Fraudes card_testing
+  - Desafio: Fraudes hard
+
+================================================================================

@@ -42,6 +42,18 @@ RELATÓRIO DE ANÁLISE EXPLORATÓRIA - FRAUD DETECTION
       Normal: 2.99 | Fraude: 3.14 | Diferença: +4.9%
   - is_weekend:
       Normal: 0.29 | Fraude: 0.30 | Diferença: +3.4%
+  - tx_count_rolling_1h_user:
+      Normal: 0.00 | Fraude: 1.30 | Diferença: +29855.7%
+  - distinct_merchants_rolling_1h_user:
+      Normal: 0.00 | Fraude: 1.30 | Diferença: +29878.7%
+  - is_new_merchant_category_user:
+      Normal: 0.35 | Fraude: 0.49 | Diferença: +38.4%
+  - rapid_sequence_flag:
+      Normal: 0.00 | Fraude: 0.28 | Diferença: +332295.1%
+  - value_anomaly_flag:
+      Normal: 0.01 | Fraude: 0.61 | Diferença: +5352.5%
+  - combined_anomaly_score:
+      Normal: 0.35 | Fraude: 3.53 | Diferença: +916.9%
 
 ================================================================================
 ✓ ANÁLISE CONCLUÍDA!

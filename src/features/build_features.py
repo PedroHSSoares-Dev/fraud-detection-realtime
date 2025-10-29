@@ -9,18 +9,6 @@ FILOSOFIA:
 - Anomalias são DESVIOS DE PADRÃO, não valores absolutos
 - Features devem comparar transação atual com histórico do usuário
 - Quanto mais contextual a feature, mais poderosa
-
-Features Implementadas:
-1. tempo_desde_ultima_tx_usuario (s)
-2. media_gasto_7d_usuario (R$)
-3. std_gasto_7d_usuario (R$)
-4. distancia_tx_home_location (km)
-5. tx_fora_horario_comum (0/1)
-6. velocidade_entre_txs (km/h) - DETECTA TELEPORTE!
-7. desvio_valor_do_padrao (z-score)
-8. hora_do_dia (0-23)
-9. dia_da_semana (0-6)
-10. is_weekend (0/1)
 """
 
 import pandas as pd
@@ -33,28 +21,15 @@ from geopy.distance import geodesic
 def calculate_time_since_last_transaction(df: pd.DataFrame) -> pd.Series:
     """
     Calcula o tempo (em segundos) desde a última transação do mesmo usuário.
-    
     DETECTA: Sondagem de cartão (múltiplas transações em segundos)
-    
-    Args:
-        df: DataFrame com colunas 'user_id' e 'timestamp'
-    
-    Returns:
-        Series com tempo em segundos (NaN para primeira transação do usuário)
     """
-    # Garantir que timestamp seja datetime
     df = df.copy()
     df['timestamp'] = pd.to_datetime(df['timestamp'])
-    
-    # Ordenar por usuário e timestamp
     df = df.sort_values(['user_id', 'timestamp'])
     
-    # Calcular diferença de tempo dentro de cada usuário
     df['prev_timestamp'] = df.groupby('user_id')['timestamp'].shift(1)
     df['time_since_last_tx'] = (df['timestamp'] - df['prev_timestamp']).dt.total_seconds()
-    
-    # Primeira transação de cada usuário = NaN (substituir por valor alto, ex: 1 dia)
-    df['time_since_last_tx'] = df['time_since_last_tx'].fillna(86400)  # 24h em segundos
+    df['time_since_last_tx'] = df['time_since_last_tx'].fillna(86400)
     
     return df['time_since_last_tx']
 
@@ -62,31 +37,20 @@ def calculate_time_since_last_transaction(df: pd.DataFrame) -> pd.Series:
 def calculate_user_spending_stats(df: pd.DataFrame, window_days: int = 7) -> Tuple[pd.Series, pd.Series]:
     """
     Calcula média e desvio padrão de gasto do usuário nos últimos N dias.
-    
     DETECTA: Gasto súbito (valor muito acima da média do usuário)
-    
-    Args:
-        df: DataFrame com colunas 'user_id', 'timestamp', 'amount'
-        window_days: Janela de tempo em dias (padrão: 7)
-    
-    Returns:
-        Tuple (média, desvio_padrão) de gasto do usuário
     """
     df = df.copy()
     df['timestamp'] = pd.to_datetime(df['timestamp'])
     df = df.sort_values(['user_id', 'timestamp'])
     
-    # Calcular média móvel por usuário (janela de tempo)
     df['user_avg_amount_7d'] = df.groupby('user_id')['amount'].transform(
         lambda x: x.rolling(window=window_days, min_periods=1).mean()
     )
     
-    # Calcular desvio padrão móvel
     df['user_std_amount_7d'] = df.groupby('user_id')['amount'].transform(
         lambda x: x.rolling(window=window_days, min_periods=1).std()
     )
     
-    # Preencher NaN com média geral
     df['user_avg_amount_7d'] = df['user_avg_amount_7d'].fillna(df['amount'].mean())
     df['user_std_amount_7d'] = df['user_std_amount_7d'].fillna(df['amount'].std())
     
@@ -96,29 +60,15 @@ def calculate_user_spending_stats(df: pd.DataFrame, window_days: int = 7) -> Tup
 def calculate_distance_from_home(df: pd.DataFrame) -> pd.Series:
     """
     Calcula distância (em km) entre localização da transação e localização "home" do usuário.
-    
     DETECTA: Teleporte geográfico (transação longe de casa)
-    
-    LÓGICA:
-    - "Home" = localização da primeira transação do usuário (assumimos que é casa)
-    - Usa fórmula de Haversine para distância entre coordenadas
-    
-    Args:
-        df: DataFrame com colunas 'user_id', 'latitude', 'longitude'
-    
-    Returns:
-        Series com distância em km
     """
     df = df.copy()
     
-    # Definir localização "home" como primeira transação do usuário
     home_locations = df.groupby('user_id').first()[['latitude', 'longitude']]
     home_locations.columns = ['home_lat', 'home_lon']
     
-    # Merge de volta no dataframe
     df = df.merge(home_locations, left_on='user_id', right_index=True, how='left')
     
-    # Calcular distância usando Haversine
     def haversine_distance(row):
         if pd.isna(row['home_lat']) or pd.isna(row['latitude']):
             return 0
@@ -138,29 +88,16 @@ def calculate_distance_from_home(df: pd.DataFrame) -> pd.Series:
 def calculate_velocity_between_transactions(df: pd.DataFrame) -> pd.Series:
     """
     Calcula velocidade (em km/h) necessária para viajar entre duas transações consecutivas.
-    
-    DETECTA: Teleporte (velocidade humanamente impossível, ex: 5000 km/h)
-    
-    LÓGICA:
-    - Velocidade = Distância / Tempo
-    - Se velocidade > 800 km/h (velocidade de avião), é suspeito
-    
-    Args:
-        df: DataFrame com colunas 'user_id', 'latitude', 'longitude', 'timestamp'
-    
-    Returns:
-        Series com velocidade em km/h
+    DETECTA: Teleporte (velocidade humanamente impossível)
     """
     df = df.copy()
     df['timestamp'] = pd.to_datetime(df['timestamp'])
     df = df.sort_values(['user_id', 'timestamp'])
     
-    # Calcular coordenadas da transação anterior
     df['prev_lat'] = df.groupby('user_id')['latitude'].shift(1)
     df['prev_lon'] = df.groupby('user_id')['longitude'].shift(1)
     df['prev_timestamp'] = df.groupby('user_id')['timestamp'].shift(1)
     
-    # Calcular distância entre transações
     def distance_between_txs(row):
         if pd.isna(row['prev_lat']):
             return 0
@@ -174,20 +111,15 @@ def calculate_velocity_between_transactions(df: pd.DataFrame) -> pd.Series:
     
     df['distance_between_txs'] = df.apply(distance_between_txs, axis=1)
     
-    # Calcular tempo entre transações (em horas)
     df['time_between_txs_hours'] = (df['timestamp'] - df['prev_timestamp']).dt.total_seconds() / 3600
     
-    # Calcular velocidade (evitar divisão por zero)
     df['velocity_kmh'] = np.where(
         df['time_between_txs_hours'] > 0,
         df['distance_between_txs'] / df['time_between_txs_hours'],
         0
     )
     
-    # Limitar velocidades irrealistas (max: velocidade do som ~1200 km/h)
     df['velocity_kmh'] = df['velocity_kmh'].clip(upper=10000)
-    
-    # Primeira transação de cada usuário = 0
     df['velocity_kmh'] = df['velocity_kmh'].fillna(0)
     
     return df['velocity_kmh']
@@ -196,46 +128,155 @@ def calculate_velocity_between_transactions(df: pd.DataFrame) -> pd.Series:
 def calculate_unusual_hour_flag(df: pd.DataFrame) -> pd.Series:
     """
     Flag (0/1) indicando se transação ocorreu fora do horário comum (madrugada).
-    
     DETECTA: Horário atípico (transações às 2-4 AM)
-    
-    Args:
-        df: DataFrame com coluna 'timestamp'
-    
-    Returns:
-        Series binária (1 = fora do horário, 0 = horário normal)
     """
     df = df.copy()
     df['timestamp'] = pd.to_datetime(df['timestamp'])
     
-    # Extrair hora
     df['hour'] = df['timestamp'].dt.hour
-    
-    # Horário atípico: 0h-5h (madrugada)
     df['is_unusual_hour'] = ((df['hour'] >= 0) & (df['hour'] < 5)).astype(int)
     
     return df['is_unusual_hour']
 
 
+def calculate_rapid_sequence_flag(df: pd.DataFrame, threshold_seconds: int = 60) -> pd.Series:
+    """
+    Flag (0/1) indicando se transação ocorreu muito rápido após a anterior.
+    DETECTA: Sondagem de cartão (múltiplas transações em segundos)
+    """
+    rapid_sequence = (df['time_since_last_tx_sec'] < threshold_seconds).astype(int)
+    return rapid_sequence
+
+
+def calculate_tx_count_rolling_window(df: pd.DataFrame, window_minutes: int = 60) -> pd.Series:
+    """
+    Conta quantas transações o usuário fez na última N minutos.
+    DETECTA: Card testing (múltiplas transações em janela curta)
+    """
+    df = df.copy()
+    df['timestamp'] = pd.to_datetime(df['timestamp'])
+    df = df.sort_values(['user_id', 'timestamp'])
+    
+    def count_recent_txs(group):
+        timestamps = group['timestamp']
+        counts = []
+        
+        for idx, current_time in enumerate(timestamps):
+            time_threshold = current_time - timedelta(minutes=window_minutes)
+            recent_txs = timestamps[(timestamps < current_time) & (timestamps >= time_threshold)]
+            counts.append(len(recent_txs))
+        
+        return pd.Series(counts, index=group.index)
+    
+    tx_counts = df.groupby('user_id').apply(count_recent_txs, include_groups=False)
+    
+    if isinstance(tx_counts.index, pd.MultiIndex):
+        tx_counts = tx_counts.droplevel(0)
+    
+    return tx_counts
+
+
+def calculate_distinct_merchants_rolling_window(df: pd.DataFrame, window_minutes: int = 60) -> pd.Series:
+    """
+    Conta quantas lojas diferentes o usuário usou na última N minutos.
+    DETECTA: Card testing (fraudador testa em múltiplas lojas)
+    """
+    df = df.copy()
+    df['timestamp'] = pd.to_datetime(df['timestamp'])
+    df = df.sort_values(['user_id', 'timestamp'])
+    
+    def count_distinct_merchants(group):
+        timestamps = group['timestamp']
+        merchants = group['merchant_name']
+        counts = []
+        
+        for idx, current_time in enumerate(timestamps):
+            time_threshold = current_time - timedelta(minutes=window_minutes)
+            recent_mask = (timestamps < current_time) & (timestamps >= time_threshold)
+            recent_merchants = merchants[recent_mask]
+            counts.append(recent_merchants.nunique())
+        
+        return pd.Series(counts, index=group.index)
+    
+    distinct_counts = df.groupby('user_id').apply(count_distinct_merchants, include_groups=False)
+    
+    if isinstance(distinct_counts.index, pd.MultiIndex):
+        distinct_counts = distinct_counts.droplevel(0)
+    
+    return distinct_counts
+
+
+def calculate_new_merchant_category_flag(df: pd.DataFrame) -> pd.Series:
+    """
+    Flag (0/1) indicando se esta é a primeira vez que o usuário usa esta categoria de merchant.
+    DETECTA: Padrão de compra incomum
+    """
+    df = df.copy()
+    df['timestamp'] = pd.to_datetime(df['timestamp'])
+    df = df.sort_values(['user_id', 'timestamp'])
+    
+    def check_new_category(group):
+        categories = group['merchant_category']
+        flags = []
+        seen_categories = set()
+        
+        for category in categories:
+            if category not in seen_categories:
+                flags.append(1)
+                seen_categories.add(category)
+            else:
+                flags.append(0)
+        
+        return pd.Series(flags, index=group.index)
+    
+    new_category_flags = df.groupby('user_id').apply(check_new_category, include_groups=False)
+    
+    if isinstance(new_category_flags.index, pd.MultiIndex):
+        new_category_flags = new_category_flags.droplevel(0)
+    
+    return new_category_flags
+
+
+def calculate_value_anomaly_flag(df: pd.DataFrame) -> pd.Series:
+    """
+    Flag (0/1) indicando se valor é anômalo (muito baixo ou muito alto).
+    DETECTA: Card testing (valores baixos) e gasto súbito (valores altos)
+    """
+    is_micro = df['amount'] < 30
+    is_huge = df['amount'] > (df['user_avg_amount_7d'] * 3)
+    value_anomaly = (is_micro | is_huge).astype(int)
+    
+    return value_anomaly
+
+
+def calculate_combined_anomaly_score(df: pd.DataFrame) -> pd.Series:
+    """
+    Score combinado de anomalia (0-15) baseado em múltiplos sinais.
+    DETECTA: Fraudes sutis com múltiplos sinais fracos
+    """
+    score = pd.Series(0, index=df.index)
+    
+    score += (df['velocity_kmh'] > 100).astype(int) * 3
+    score += (df['distance_from_home_km'] > 1000).astype(int) * 2
+    score += (df['spending_zscore'] > 2).astype(int) * 2
+    score += (df['is_unusual_hour'] == 1).astype(int) * 1
+    score += (df['time_since_last_tx_sec'] < 60).astype(int) * 2
+    
+    if 'tx_count_rolling_1h_user' in df.columns:
+        score += (df['tx_count_rolling_1h_user'] > 3).astype(int) * 3
+    
+    if 'distinct_merchants_rolling_1h_user' in df.columns:
+        score += (df['distinct_merchants_rolling_1h_user'] > 1).astype(int) * 2
+    
+    return score
+
+
 def calculate_spending_deviation(df: pd.DataFrame, user_avg: pd.Series, user_std: pd.Series) -> pd.Series:
     """
     Calcula z-score do valor da transação em relação ao padrão do usuário.
-    
     DETECTA: Gasto súbito (valor muito fora do padrão)
-    
-    Z-score > 3 = muito acima da média (suspeito!)
-    
-    Args:
-        df: DataFrame com coluna 'amount'
-        user_avg: Média de gasto do usuário
-        user_std: Desvio padrão de gasto do usuário
-    
-    Returns:
-        Series com z-score
     """
-    # Evitar divisão por zero
     user_std_safe = user_std.replace(0, 1)
-    
     z_score = (df['amount'] - user_avg) / user_std_safe
     
     return z_score
@@ -244,18 +285,12 @@ def calculate_spending_deviation(df: pd.DataFrame, user_avg: pd.Series, user_std
 def extract_temporal_features(df: pd.DataFrame) -> pd.DataFrame:
     """
     Extrai features temporais: hora, dia da semana, fim de semana.
-    
-    Args:
-        df: DataFrame com coluna 'timestamp'
-    
-    Returns:
-        DataFrame com 3 novas colunas
     """
     df = df.copy()
     df['timestamp'] = pd.to_datetime(df['timestamp'])
     
     df['hour_of_day'] = df['timestamp'].dt.hour
-    df['day_of_week'] = df['timestamp'].dt.dayofweek  # 0=Monday, 6=Sunday
+    df['day_of_week'] = df['timestamp'].dt.dayofweek
     df['is_weekend'] = (df['day_of_week'] >= 5).astype(int)
     
     return df[['hour_of_day', 'day_of_week', 'is_weekend']]
@@ -263,58 +298,40 @@ def extract_temporal_features(df: pd.DataFrame) -> pd.DataFrame:
 
 def build_all_features(df: pd.DataFrame) -> pd.DataFrame:
     """
-    Aplica TODAS as transformações de features no dataset.
+    Aplica todas as transformações de features no dataset.
     
-    Esta é a função principal que será usada em:
+    Esta função será usada em:
     - EDA (Fase 3)
     - Treino do modelo (Fase 4)
     - API de produção (Fase 5)
-    
-    Args:
-        df: DataFrame bruto com transações
-    
-    Returns:
-        DataFrame com features adicionadas
     """
-    print("🔧 Iniciando Feature Engineering...")
+    print("\n" + "="*70)
+    print("INICIANDO FEATURE ENGINEERING")
+    print("="*70)
     
     df = df.copy()
     
-    # 1. Tempo desde última transação
-    print("  - Calculando tempo desde última transação...")
+    print("\nCalculando features básicas...")
     df['time_since_last_tx_sec'] = calculate_time_since_last_transaction(df)
-    
-    # 2. Estatísticas de gasto do usuário
-    print("  - Calculando média e desvio padrão de gasto...")
     df['user_avg_amount_7d'], df['user_std_amount_7d'] = calculate_user_spending_stats(df)
-    
-    # 3. Distância de casa
-    print("  - Calculando distância da localização home...")
     df['distance_from_home_km'] = calculate_distance_from_home(df)
-    
-    # 4. Velocidade entre transações
-    print("  - Calculando velocidade entre transações...")
     df['velocity_kmh'] = calculate_velocity_between_transactions(df)
-    
-    # 5. Flag de horário atípico
-    print("  - Detectando horários atípicos...")
     df['is_unusual_hour'] = calculate_unusual_hour_flag(df)
+    df['spending_zscore'] = calculate_spending_deviation(df, df['user_avg_amount_7d'], df['user_std_amount_7d'])
     
-    # 6. Desvio de gasto (z-score)
-    print("  - Calculando desvio de gasto...")
-    df['spending_zscore'] = calculate_spending_deviation(
-        df, 
-        df['user_avg_amount_7d'], 
-        df['user_std_amount_7d']
-    )
-    
-    # 7. Features temporais
-    print("  - Extraindo features temporais...")
     temporal_features = extract_temporal_features(df)
     df = pd.concat([df, temporal_features], axis=1)
     
-    print("✓ Feature Engineering concluído!")
-    print(f"  - Total de features criadas: 10")
+    print("Calculando features avançadas...")
+    df['tx_count_rolling_1h_user'] = calculate_tx_count_rolling_window(df, window_minutes=60)
+    df['distinct_merchants_rolling_1h_user'] = calculate_distinct_merchants_rolling_window(df, window_minutes=60)
+    df['is_new_merchant_category_user'] = calculate_new_merchant_category_flag(df)
+    df['rapid_sequence_flag'] = calculate_rapid_sequence_flag(df)
+    df['value_anomaly_flag'] = calculate_value_anomaly_flag(df)
+    df['combined_anomaly_score'] = calculate_combined_anomaly_score(df)
+    
+    print(f"\nFeature engineering concluído: 16 features criadas")
+    print("="*70)
     
     return df
 
@@ -323,21 +340,9 @@ def get_feature_columns() -> list:
     """
     Retorna lista de colunas de features para treino do modelo.
     
-    IMPORTANTE: NÃO incluir colunas que podem vazar informação:
-    - transaction_id (identificador único, sem valor preditivo)
-    - user_id (identificador único, sem valor preditivo)
-    - timestamp (usar apenas features derivadas: hour_of_day, day_of_week)
-    - merchant_name (muitos valores únicos, usar merchant_category)
-    - is_fraud (target!)
-    - fraud_type (target!)
-    - fraud_difficulty (target!)
-    
-    Esta lista será usada para:
-    - Treinar o Isolation Forest
-    - Fazer predições na API
-    
-    Returns:
-        Lista de nomes de colunas
+    IMPORTANTE: Não incluir colunas que podem vazar informação:
+    - transaction_id, user_id, timestamp, merchant_name
+    - is_fraud, fraud_type, fraud_difficulty (targets)
     """
     return [
         'amount',
@@ -350,38 +355,36 @@ def get_feature_columns() -> list:
         'spending_zscore',
         'hour_of_day',
         'day_of_week',
-        'is_weekend'
+        'is_weekend',
+        'tx_count_rolling_1h_user',
+        'distinct_merchants_rolling_1h_user',
+        'is_new_merchant_category_user',
+        'rapid_sequence_flag',
+        'value_anomaly_flag',
+        'combined_anomaly_score'
     ]
 
 
-# ==============================================================================
-# SCRIPT DE TESTE (Se executar este arquivo diretamente)
-# ==============================================================================
-
 if __name__ == '__main__':
-    print("=" * 80)
+    print("="*80)
     print("TESTE DE FEATURE ENGINEERING")
-    print("=" * 80)
+    print("="*80)
     
-    # Carregar dados
-    print("\n📂 Carregando dados...")
+    print("\nCarregando dados...")
     df = pd.read_csv('../../data/raw/transactions_with_fraud.csv')
-    print(f"  ✓ {len(df):,} transações carregadas")
+    print(f"Transações carregadas: {len(df):,}")
     
-    # Aplicar features
     df_features = build_all_features(df)
     
-    # Salvar dataset com features
     output_path = '../../data/processed/transactions_with_features.csv'
     df_features.to_csv(output_path, index=False)
-    print(f"\n💾 Dataset com features salvo em: {output_path}")
+    print(f"\nDataset salvo em: {output_path}")
     
-    # Mostrar amostra de fraudes
-    print("\n🔍 Amostra de fraudes com features:")
+    print("\nAmostra de fraudes:")
     frauds = df_features[df_features['is_fraud'] == 1].head(5)
     feature_cols = get_feature_columns()
-    print(frauds[['transaction_id', 'fraud_type', 'fraud_difficulty'] + feature_cols])
+    print(frauds[['transaction_id', 'fraud_type', 'fraud_difficulty'] + feature_cols[:5]])
     
-    print("\n" + "=" * 80)
-    print("✓ TESTE CONCLUÍDO COM SUCESSO!")
-    print("=" * 80)
+    print("\n" + "="*80)
+    print("TESTE CONCLUÍDO")
+    print("="*80)
