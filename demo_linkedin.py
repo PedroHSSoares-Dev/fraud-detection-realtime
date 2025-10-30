@@ -23,16 +23,34 @@ init(autoreset=True)
 # ============================================================================
 
 API_URL = "http://localhost:5000"
-SPEED = 2  # Multiplicador de velocidade (1.0 = normal, 0.5 = lento, 2.0 = rápido)
+SPEED = 1.0  # Multiplicador de velocidade (1.0 = normal, 2.0 = 2x mais LENTO)
+
+# Timings específicos (em segundos)
+TIMING = {
+    'logo': 3.0,              # Logo inicial
+    'step_transition': 0.8,   # Entre passos
+    'reading': 0.5,           # Leitura de texto
+    'progress_bar': 1.0,      # Barras de progresso
+    'json_display': 1.5,      # Exibição de JSON
+    'highlight': 5.0,         # Caixas destacadas 
+    'fraud_alert': 5.0,       # Alertas de fraude
+    'summary_table': 2.0,     # Tabelas no resumo
+    'final': 5.0              # Tela final
+}
 
 
 # ============================================================================
 # FUNÇÕES AUXILIARES
 # ============================================================================
 
-def sleep(seconds):
-    """Sleep ajustável pela velocidade."""
-    time.sleep(seconds * SPEED)
+def sleep(seconds, category='reading'):
+    """Sleep ajustável pela velocidade com categorias."""
+    if isinstance(seconds, str):
+        # Se passar categoria como string
+        category = seconds
+        seconds = TIMING.get(category, 0.5)
+    
+    time.sleep(seconds / SPEED)  # Dividir inverte a lógica (maior = mais lento)
 
 
 def print_logo():
@@ -106,16 +124,16 @@ def print_json(data, highlight_keys=None):
     print(json_str)
 
 
-def typing_effect(text, delay=0.05):
-    """Simula digitação."""
+def typing_effect(text, delay=0.02):
+    """Simula digitação rápida."""
     for char in text:
         sys.stdout.write(char)
         sys.stdout.flush()
-        time.sleep(delay * SPEED)
+        time.sleep(delay / SPEED)
     print()
 
 
-def show_progress(text, duration=2):
+def show_progress(text, duration=1.0):
     """Mostra barra de progresso."""
     print(f"\n{Fore.CYAN}{text}{Style.RESET_ALL}")
     for _ in tqdm(
@@ -123,7 +141,7 @@ def show_progress(text, duration=2):
         bar_format='{l_bar}{bar}| {n_fmt}/{total_fmt}',
         colour='cyan'
     ):
-        time.sleep(duration / 100 * SPEED)
+        time.sleep(duration / 100 / SPEED)
 
 
 def print_box(text, color=Fore.RED):
@@ -134,12 +152,12 @@ def print_box(text, color=Fore.RED):
     print(f"╚{border}╝{Style.RESET_ALL}")
 
 
-def animate_loading(text="Processando", steps=3, delay=0.5):
+def animate_loading(text="Processando", steps=3, delay=0.3):
     """Animação de carregamento."""
     for i in range(steps):
         sys.stdout.write(f"\r{Fore.YELLOW}{text}{'.' * (i + 1)}   {Style.RESET_ALL}")
         sys.stdout.flush()
-        sleep(delay)
+        time.sleep(delay / SPEED)
     print()
 
 
@@ -155,9 +173,9 @@ def print_separator(char="─", length=70, color=Fore.CYAN):
 def check_api_health():
     """Verifica se API está rodando."""
     print_step(1, "Verificando Status da API", Fore.CYAN)
-    sleep(0.5)
+    sleep(0.3, 'reading')
     
-    show_progress("Conectando ao sistema", duration=1.5)
+    show_progress("Conectando ao sistema", duration=TIMING['progress_bar'])
     
     try:
         response = requests.get(f"{API_URL}/health", timeout=5)
@@ -181,7 +199,7 @@ def check_api_health():
 def demo_normal_transaction():
     """Demonstra transação normal (aprovada)."""
     print_step(2, "Transação Normal - Comportamento Legítimo", Fore.GREEN)
-    sleep(1)
+    sleep(0.5, 'reading')
     
     transaction = {
         "user_id": "user_demo_normal",
@@ -202,21 +220,23 @@ def demo_normal_transaction():
     print(f"└─ ⏰ Horário: {Fore.WHITE}{datetime.now().strftime('%H:%M:%S')}")
     print(Style.RESET_ALL)
     
-    sleep(1)
-    animate_loading("Analisando padrão de comportamento", steps=3, delay=0.6)
+    sleep(0.5, 'reading')
+    animate_loading("Analisando padrão de comportamento", steps=3, delay=0.3)
     
     response = requests.post(f"{API_URL}/predict", json=transaction)
     data = response.json()
     
-    sleep(0.5)
+    sleep(0.3, 'reading')
     print(f"\n{Fore.CYAN}📊 ANÁLISE DO MODELO:{Style.RESET_ALL}")
     print_json(data, highlight_keys=['risk_level', 'recommendation', 'anomaly_score'])
     
-    sleep(1.5)
+    sleep(TIMING['json_display'])
+    
     if data['risk_level'] == 'BAIXO':
         print_box("✓ TRANSAÇÃO APROVADA AUTOMATICAMENTE", Fore.GREEN)
         print(f"\n{Fore.GREEN}   Anomaly Score: {data['anomaly_score']:.3f} (normal)")
         print(f"   Sem sinais de fraude detectados{Style.RESET_ALL}")
+        sleep(TIMING['highlight'])  # 5 segundos para ler o resultado
     
     return transaction
 
@@ -224,7 +244,7 @@ def demo_normal_transaction():
 def demo_teleport_fraud(previous_transaction):
     """Demonstra detecção de teleporte (fraude crítica)."""
     print_step(3, "Transação Suspeita - Possível Teleporte", Fore.RED)
-    sleep(1)
+    sleep(0.5, 'reading')
     
     print(f"\n{Fore.YELLOW}⏳ Simulando passagem de tempo...{Style.RESET_ALL}")
     print(f"{Fore.CYAN}   (30 minutos após transação anterior){Style.RESET_ALL}")
@@ -236,7 +256,7 @@ def demo_teleport_fraud(previous_transaction):
         bar_format='{desc}: {bar}',
         colour='yellow'
     ):
-        time.sleep(0.02 * SPEED)
+        time.sleep(0.008 / SPEED)  # Bem rápido
     print()
     
     transaction = {
@@ -258,20 +278,20 @@ def demo_teleport_fraud(previous_transaction):
     print(f"└─ ⏰ Horário: {Fore.WHITE}{datetime.now().strftime('%H:%M:%S')} {Fore.RED}(30 min depois)")
     print(Style.RESET_ALL)
     
-    sleep(1)
-    animate_loading("Calculando features geoespaciais", steps=4, delay=0.5)
+    sleep(0.5, 'reading')
+    animate_loading("Calculando features geoespaciais", steps=4, delay=0.25)
     
     response = requests.post(f"{API_URL}/predict", json=transaction)
     data = response.json()
     
-    sleep(0.5)
+    sleep(0.3, 'reading')
     print(f"\n{Fore.RED}📊 ANÁLISE DO MODELO (CRÍTICA):{Style.RESET_ALL}")
     print_json(
         data, 
         highlight_keys=['risk_level', 'velocity_kmh', 'distance_from_home_km', 'recommendation']
     )
     
-    sleep(1.5)
+    sleep(TIMING['json_display'])
     
     # DESTAQUE DRAMÁTICO DO RESULTADO
     if data['risk_level'] in ['CRÍTICO', 'ALTO']:
@@ -281,7 +301,7 @@ def demo_teleport_fraud(previous_transaction):
               "  🚨 ALERTA DE FRAUDE - NÍVEL CRÍTICO  ".center(70) + Style.RESET_ALL)
         print("!" * 70)
         
-        sleep(0.5)
+        sleep(0.5, 'reading')
         velocity = data['features']['velocity_kmh']
         distance = data['features']['distance_from_home_km']
         
@@ -293,7 +313,8 @@ def demo_teleport_fraud(previous_transaction):
         print(f"║  🎯 Anomaly Score:        {data['anomaly_score']:>23.3f}     ║")
         print(f"╚═══════════════════════════════════════════════════════╝{Style.RESET_ALL}")
         
-        sleep(1)
+        sleep(TIMING['fraud_alert'])  # 5 SEGUNDOS - IMPORTANTE!
+        
         print(f"\n{Fore.YELLOW}💡 ANÁLISE TÉCNICA:{Style.RESET_ALL}")
         print(f"   {Fore.CYAN}├─ Distância São Paulo → Tóquio: {Fore.WHITE}~18.400 km")
         print(f"   {Fore.CYAN}├─ Tempo decorrido: {Fore.WHITE}~30 minutos")
@@ -301,20 +322,21 @@ def demo_teleport_fraud(previous_transaction):
         print(f"   {Fore.CYAN}├─ Velocidade detectada: {Fore.RED}{velocity:,.0f} km/h")
         print(f"   {Fore.CYAN}└─ Conclusão: {Fore.RED}{Style.BRIGHT}FISICAMENTE IMPOSSÍVEL!{Style.RESET_ALL}")
         
-        sleep(1)
+        sleep(1.0, 'reading')
         print_box("🛑 AÇÃO RECOMENDADA: BLOQUEAR E CONTATAR CLIENTE", Fore.RED)
+        sleep(TIMING['highlight'])  # 5 SEGUNDOS - IMPORTANTE!
 
 
 def demo_card_testing():
     """Demonstra detecção de card testing."""
     print_step(4, "Card Testing - Sondagem de Cartão", Fore.YELLOW)
-    sleep(1)
+    sleep(0.5, 'reading')
     
     print(f"\n{Fore.CYAN}📝 Cenário:{Style.RESET_ALL}")
-    typing_effect("   Fraudador testa cartão roubado em múltiplos estabelecimentos", delay=0.03)
-    typing_effect("   com valores baixos para confirmar validade...", delay=0.03)
+    typing_effect("   Fraudador testa cartão roubado em múltiplos estabelecimentos", delay=0.015)
+    typing_effect("   com valores baixos para confirmar validade...", delay=0.015)
     
-    sleep(1)
+    sleep(0.5, 'reading')
     
     merchants = [
         ("Loja de Conveniência 24h", "retail", 5.00),
@@ -345,10 +367,10 @@ def demo_card_testing():
         
         if i < 3:
             print(f"   {Fore.GREEN}✓ Processando...{Style.RESET_ALL}\n")
-            sleep(0.8)
+            sleep(0.4, 'reading')
         else:
-            sleep(0.5)
-            animate_loading("Detectando padrão anômalo", steps=3, delay=0.5)
+            sleep(0.3, 'reading')
+            animate_loading("Detectando padrão anômalo", steps=3, delay=0.25)
             
             print(f"\n{Fore.YELLOW}📊 ANÁLISE DA 3ª TRANSAÇÃO:{Style.RESET_ALL}")
             print_json(
@@ -356,7 +378,8 @@ def demo_card_testing():
                 highlight_keys=['risk_level', 'distinct_merchants_1h', 'tx_count_1h']
             )
             
-            sleep(1.5)
+            sleep(TIMING['json_display'])
+            
             if data['risk_level'] in ['ALTO', 'CRÍTICO']:
                 print_warning("CARD TESTING DETECTADO!")
                 print(f"\n{Fore.YELLOW}   Padrão identificado:")
@@ -364,17 +387,19 @@ def demo_card_testing():
                 print(f"   {Fore.CYAN}├─ Transações em sequência: {Fore.WHITE}{data['features']['tx_count_1h']}")
                 print(f"   {Fore.CYAN}├─ Valores suspeitos: {Fore.WHITE}Micro-transações (<R$ 20)")
                 print(f"   {Fore.CYAN}└─ Risco: {Fore.RED}{data['risk_level']}{Style.RESET_ALL}")
+                
+                sleep(TIMING['highlight'])  # 5 SEGUNDOS - IMPORTANTE!
 
 
 def demo_summary():
     """Mostra resumo final com estatísticas."""
     print_header("📊 RESUMO DA DEMONSTRAÇÃO", Fore.MAGENTA)
-    sleep(1)
+    sleep(0.5, 'reading')
     
     print(f"\n{Fore.CYAN}{Style.BRIGHT}Sistema de Detecção de Fraude em Tempo Real{Style.RESET_ALL}")
     print(f"{Fore.CYAN}Powered by Machine Learning (Isolation Forest){Style.RESET_ALL}")
     
-    sleep(1)
+    sleep(0.5, 'reading')
     print_separator()
     
     print(f"\n{Fore.GREEN}{Style.BRIGHT}✅ DETECÇÕES REALIZADAS NESTA DEMO:{Style.RESET_ALL}")
@@ -382,7 +407,7 @@ def demo_summary():
     print(f"   {Fore.RED}2. Teleporte (SP→Tokyo) → {Fore.WHITE}BLOQUEADA {Fore.RED}(CRÍTICO)")
     print(f"   {Fore.YELLOW}3. Card Testing → {Fore.WHITE}SINALIZADA {Fore.YELLOW}(ALTO risco){Style.RESET_ALL}")
     
-    sleep(1)
+    sleep(TIMING['summary_table'])  # 2 segundos
     print_separator()
     
     print(f"\n{Fore.YELLOW}{Style.BRIGHT}🎯 PERFORMANCE DO MODELO (Dataset Completo):{Style.RESET_ALL}")
@@ -402,7 +427,7 @@ def demo_summary():
     for metric, value, color in metrics:
         print(f"   {metric:<20} {color}{value:>10}{Style.RESET_ALL}")
     
-    sleep(1)
+    sleep(TIMING['summary_table'])  # 2 segundos
     print_separator()
     
     print(f"\n{Fore.CYAN}{Style.BRIGHT}🏗️  STACK TECNOLÓGICO:{Style.RESET_ALL}")
@@ -421,15 +446,15 @@ def demo_summary():
     for component, tech in stack:
         print(f"   {Fore.CYAN}├─ {component}:{Fore.WHITE} {tech}{Style.RESET_ALL}")
     
-    sleep(1)
+    sleep(1.0, 'reading')
     print_separator()
     
     print(f"\n{Fore.MAGENTA}{Style.BRIGHT}💼 IMPACTO DE NEGÓCIO:{Style.RESET_ALL}")
     print(f"\n   {Fore.CYAN}Cenário: Fintech com 1M transações/mês")
     print(f"   {Fore.CYAN}Taxa de fraude: 0.24% (2.400 fraudes/mês){Style.RESET_ALL}")
     
-    print(f"\n   {'Métrica':<30} {'Valor':>20}")
-    print(f"   {Fore.MAGENTA}{'-' * 52}{Style.RESET_ALL}")
+    print(f"\n   {'Métrica':<40} {'Valor':>20}")
+    print(f"   {Fore.MAGENTA}{'-' * 62}{Style.RESET_ALL}")
     
     business_metrics = [
         ("Fraudes Detectadas", "1.718/mês", Fore.GREEN),
@@ -442,7 +467,9 @@ def demo_summary():
     ]
     
     for metric, value, color in business_metrics:
-        print(f"   {metric:<30} {color}{Style.BRIGHT}{value:>20}{Style.RESET_ALL}")
+        print(f"   {metric:<40} {color}{Style.BRIGHT}{value:>20}{Style.RESET_ALL}")
+    
+    sleep(TIMING['summary_table'])  # 2 segundos para ler métricas
 
 
 def print_closing():
@@ -450,7 +477,7 @@ def print_closing():
     print_separator("═", 70, Fore.MAGENTA)
     
     print(f"\n{Fore.CYAN}{Style.BRIGHT}🔗 LINKS E CONTATO:{Style.RESET_ALL}")
-    print(f"\n   {Fore.CYAN}GitHub:{Fore.WHITE} https://github.com/PedroHSSoares-Dev/fraud-detection-realtime")
+    print(f"\n   {Fore.CYAN}GitHub:{Fore.WHITE} github.com/PedroHSSoares-Dev/fraud-detection-realtime")
     print(f"   {Fore.CYAN}LinkedIn:{Fore.WHITE} https://www.linkedin.com/in/pedrohssoares/")
     print(f"   {Fore.CYAN}Email:{Fore.WHITE} pedrohssoares@live.com")
     
@@ -471,48 +498,46 @@ def print_closing():
 def main():
     """Função principal - executa toda a demonstração."""
     try:
-        # Limpar tela (opcional)
-        # import os
-        # os.system('cls' if os.name == 'nt' else 'clear')
-        
         # Logo e introdução
         print_logo()
-        sleep(2)
+        sleep(TIMING['logo'])  # 3 segundos
         
         print(f"{Fore.YELLOW}📹 Demonstração para LinkedIn{Style.RESET_ALL}")
         print(f"{Fore.CYAN}👨‍💻 Desenvolvido por: Pedro Soares")
         print(f"{Fore.CYAN}🎯 Tech Stack: Python | Flask | PostgreSQL | Docker | ML{Style.RESET_ALL}")
-        sleep(2)
+        sleep(1.0, 'reading')
         
         # Verificar API
         if not check_api_health():
             return
         
-        sleep(2)
+        sleep(TIMING['step_transition'])
         
         # Demonstrações
         print_separator("═", 70, Fore.CYAN)
         
         # 1. Transação normal
         previous_tx = demo_normal_transaction()
-        sleep(2.5)
+        sleep(TIMING['step_transition'])
         
         # 2. Teleporte (FRAUDE!)
         demo_teleport_fraud(previous_tx)
-        sleep(2.5)
+        sleep(TIMING['step_transition'])
         
         # 3. Card Testing
         demo_card_testing()
-        sleep(2.5)
+        sleep(TIMING['step_transition'])
         
         # 4. Resumo
         demo_summary()
-        sleep(2)
+        sleep(1.0, 'reading')
         
         # 5. Finalização
         print_header("✨ DEMONSTRAÇÃO CONCLUÍDA", Fore.GREEN)
-        sleep(1)
+        sleep(0.5, 'reading')
         print_closing()
+        
+        sleep(TIMING['final'])  # 5 segundos na tela final
         
     except KeyboardInterrupt:
         print(f"\n\n{Fore.YELLOW}⚠️  Demonstração interrompida pelo usuário.{Style.RESET_ALL}\n")
@@ -524,5 +549,5 @@ def main():
 
 if __name__ == "__main__":
     print(f"\n{Fore.CYAN}Iniciando em 3 segundos...{Style.RESET_ALL}")
-    sleep(3)
+    sleep(3.0 / SPEED)
     main()
