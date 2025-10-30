@@ -37,6 +37,10 @@ data/processed/*.csv
 *.pkl
 *.h5
 
+# Except pre-trained models (for portfolio demo)
+!models/isolation_forest.joblib
+!models/scaler.joblib
+
 # VS Code
 .vscode/
 *.code-workspace
