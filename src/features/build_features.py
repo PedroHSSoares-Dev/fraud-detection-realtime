@@ -123,7 +123,7 @@ def calculate_velocity_between_transactions(df: pd.DataFrame) -> pd.Series:
         0
     )
     
-    df['velocity_kmh'] = df['velocity_kmh'].clip(upper=10000)
+    df['velocity_kmh'] = df['velocity_kmh'].clip(upper=100000)
     df['velocity_kmh'] = df['velocity_kmh'].fillna(0)
     
     return df['velocity_kmh']

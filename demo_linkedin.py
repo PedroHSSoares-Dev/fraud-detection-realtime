@@ -14,6 +14,7 @@ import sys
 from datetime import datetime
 from colorama import init, Fore, Back, Style
 from tqdm import tqdm
+from datetime import timedelta
 
 # Inicializar colorama (funciona no Windows)
 init(autoreset=True)
@@ -201,23 +202,27 @@ def demo_normal_transaction():
     print_step(2, "Transação Normal - Comportamento Legítimo", Fore.GREEN)
     sleep(0.5, 'reading')
     
+    # Timestamp base para as duas transações
+    base_time = datetime.now()
+    
     transaction = {
-        "user_id": "user_demo_normal",
+        "user_id": "user_demo_normal", 
         "amount": 200.00,
         "merchant_name": "Restaurante Figueira Rubaiyat",
         "merchant_category": "food",
         "latitude": -23.5505,
         "longitude": -46.6333,
-        "timestamp": datetime.now().isoformat()
+        "timestamp": base_time.isoformat()
     }
     
     print(f"\n{Fore.CYAN}┌─ DETALHES DA TRANSAÇÃO")
     print(f"│")
+    print(f"├─ 👤 Usuário: {Fore.WHITE}user_demo_normal")
     print(f"├─ 📍 Localização: {Fore.WHITE}São Paulo, Brasil")
     print(f"├─ 💰 Valor: {Fore.WHITE}R$ {transaction['amount']:.2f}")
     print(f"├─ 🏪 Estabelecimento: {Fore.WHITE}{transaction['merchant_name']}")
     print(f"├─ 🏷️  Categoria: {Fore.WHITE}{transaction['merchant_category']}")
-    print(f"└─ ⏰ Horário: {Fore.WHITE}{datetime.now().strftime('%H:%M:%S')}")
+    print(f"└─ ⏰ Horário: {Fore.WHITE}{base_time.strftime('%H:%M:%S')}")
     print(Style.RESET_ALL)
     
     sleep(0.5, 'reading')
@@ -236,7 +241,7 @@ def demo_normal_transaction():
         print_box("✓ TRANSAÇÃO APROVADA AUTOMATICAMENTE", Fore.GREEN)
         print(f"\n{Fore.GREEN}   Anomaly Score: {data['anomaly_score']:.3f} (normal)")
         print(f"   Sem sinais de fraude detectados{Style.RESET_ALL}")
-        sleep(TIMING['highlight'])  # 5 segundos para ler o resultado
+        sleep(TIMING['highlight'])
     
     return transaction
 
@@ -256,26 +261,39 @@ def demo_teleport_fraud(previous_transaction):
         bar_format='{desc}: {bar}',
         colour='yellow'
     ):
-        time.sleep(0.008 / SPEED)  # Bem rápido
+        time.sleep(0.008 / SPEED)
     print()
     
+    # ============================================================
+    # CORREÇÃO: Adicionar EXATAMENTE 30 minutos ao timestamp anterior
+    # ============================================================
+    from datetime import timedelta
+    
+    # Pegar timestamp da transação anterior (São Paulo)
+    previous_time = datetime.fromisoformat(previous_transaction['timestamp'])
+    
+    # Adicionar EXATAMENTE 30 minutos
+    current_time = previous_time + timedelta(minutes=30)
+    
     transaction = {
-        "user_id": "user_demo_teleport",
+        "user_id": previous_transaction['user_id'],  # ✅ MESMO user_id (user_demo_normal)
         "amount": 300.00,
         "merchant_name": "Restaurante Sukiyabashi Jiro",
         "merchant_category": "food",
-        "latitude": 35.6762,
+        "latitude": 35.6762,  # Tóquio
         "longitude": 139.6503,
-        "timestamp": datetime.now().isoformat()
+        "timestamp": current_time.isoformat()  # ✅ +30 minutos EXATOS
     }
     
     print(f"\n{Fore.RED}┌─ DETALHES DA TRANSAÇÃO (SUSPEITA)")
     print(f"│")
+    print(f"├─ 👤 Usuário: {Fore.WHITE}{transaction['user_id']}")
     print(f"├─ 📍 Localização: {Fore.WHITE}Tóquio, Japão {Fore.RED}⚠️")
     print(f"├─ 💰 Valor: {Fore.WHITE}R$ {transaction['amount']:.2f}")
     print(f"├─ 🏪 Estabelecimento: {Fore.WHITE}{transaction['merchant_name']}")
     print(f"├─ 🏷️  Categoria: {Fore.WHITE}{transaction['merchant_category']}")
-    print(f"└─ ⏰ Horário: {Fore.WHITE}{datetime.now().strftime('%H:%M:%S')} {Fore.RED}(30 min depois)")
+    print(f"├─ ⏰ Horário Anterior: {Fore.WHITE}{previous_time.strftime('%H:%M:%S')} {Fore.CYAN}(São Paulo)")
+    print(f"└─ ⏰ Horário Atual: {Fore.WHITE}{current_time.strftime('%H:%M:%S')} {Fore.RED}(Tóquio - 30 min depois)")
     print(Style.RESET_ALL)
     
     sleep(0.5, 'reading')
@@ -294,7 +312,7 @@ def demo_teleport_fraud(previous_transaction):
     sleep(TIMING['json_display'])
     
     # DESTAQUE DRAMÁTICO DO RESULTADO
-    if data['risk_level'] in ['CRÍTICO', 'ALTO']:
+    if data['risk_level'] in ['CRÍTICO', 'ALTO'] or data['features']['velocity_kmh'] > 1000:
         print("\n")
         print("!" * 70)
         print(Back.RED + Fore.WHITE + Style.BRIGHT + 
@@ -313,19 +331,20 @@ def demo_teleport_fraud(previous_transaction):
         print(f"║  🎯 Anomaly Score:        {data['anomaly_score']:>23.3f}     ║")
         print(f"╚═══════════════════════════════════════════════════════╝{Style.RESET_ALL}")
         
-        sleep(TIMING['fraud_alert'])  # 5 SEGUNDOS - IMPORTANTE!
+        sleep(TIMING['fraud_alert'])
         
         print(f"\n{Fore.YELLOW}💡 ANÁLISE TÉCNICA:{Style.RESET_ALL}")
-        print(f"   {Fore.CYAN}├─ Distância São Paulo → Tóquio: {Fore.WHITE}~18.400 km")
-        print(f"   {Fore.CYAN}├─ Tempo decorrido: {Fore.WHITE}~30 minutos")
-        print(f"   {Fore.CYAN}├─ Velocidade média de avião: {Fore.WHITE}~900 km/h")
-        print(f"   {Fore.CYAN}├─ Velocidade detectada: {Fore.RED}{velocity:,.0f} km/h")
-        print(f"   {Fore.CYAN}└─ Conclusão: {Fore.RED}{Style.BRIGHT}FISICAMENTE IMPOSSÍVEL!{Style.RESET_ALL}")
+        print(f"   {Fore.CYAN}├─ Localização anterior: {Fore.WHITE}São Paulo, Brasil")
+        print(f"   {Fore.CYAN}├─ Localização atual: {Fore.WHITE}Tóquio, Japão")
+        print(f"   {Fore.CYAN}├─ Distância total: {Fore.WHITE}{distance:,.1f} km")
+        print(f"   {Fore.CYAN}├─ Tempo decorrido: {Fore.WHITE}30 minutos (0.5 horas)")
+        print(f"   {Fore.CYAN}├─ Velocidade necessária: {Fore.RED}{velocity:,.1f} km/h")
+        print(f"   {Fore.CYAN}├─ Velocidade de avião comercial: {Fore.WHITE}~900 km/h")
+        print(f"   {Fore.CYAN}└─ Conclusão: {Fore.RED}{Style.BRIGHT}FISICAMENTE IMPOSSÍVEL! 🚫✈️{Style.RESET_ALL}")
         
         sleep(1.0, 'reading')
         print_box("🛑 AÇÃO RECOMENDADA: BLOQUEAR E CONTATAR CLIENTE", Fore.RED)
-        sleep(TIMING['highlight'])  # 5 SEGUNDOS - IMPORTANTE!
-
+        sleep(TIMING['highlight'])
 
 def demo_card_testing():
     """Demonstra detecção de card testing."""

@@ -86,18 +86,6 @@ INSERT INTO transactions (user_id, amount, merchant_name, merchant_category, lat
 ('user_demo_normal', 195.00, 'Supermercado Carrefour', 'grocery', -23.5505, -46.6333, NOW() - INTERVAL '2 days'),
 ('user_demo_normal', 175.00, 'Farmácia Drogasil', 'pharmacy', -23.5505, -46.6333, NOW() - INTERVAL '1 day');
 
--- USER DEMO 2: user_demo_teleport (Para demonstração de teleporte)
--- Perfil: Comportamento normal em São Paulo, vai "viajar" para Tóquio
-INSERT INTO transactions (user_id, amount, merchant_name, merchant_category, latitude, longitude, timestamp) VALUES
-('user_demo_teleport', 250.00, 'Restaurante Jardins', 'food', -23.5505, -46.6333, NOW() - INTERVAL '8 days'),
-('user_demo_teleport', 180.00, 'Supermercado', 'grocery', -23.5505, -46.6333, NOW() - INTERVAL '7 days'),
-('user_demo_teleport', 220.00, 'Shopping', 'retail', -23.5505, -46.6333, NOW() - INTERVAL '6 days'),
-('user_demo_teleport', 190.00, 'Posto', 'gas_station', -23.5505, -46.6333, NOW() - INTERVAL '5 days'),
-('user_demo_teleport', 270.00, 'Restaurante', 'food', -23.5505, -46.6333, NOW() - INTERVAL '4 days'),
-('user_demo_teleport', 200.00, 'Farmácia', 'pharmacy', -23.5505, -46.6333, NOW() - INTERVAL '3 days'),
-('user_demo_teleport', 240.00, 'Restaurante Fasano', 'food', -23.5505, -46.6333, NOW() - INTERVAL '2 days'),
-('user_demo_teleport', 210.00, 'Supermercado', 'grocery', -23.5505, -46.6333, NOW() - INTERVAL '1 day');
-
 -- USER DEMO 3: user_demo_fraudster (Para demonstração de card testing)
 -- Perfil: Comportamento normal, mas vai fazer card testing
 INSERT INTO transactions (user_id, amount, merchant_name, merchant_category, latitude, longitude, timestamp) VALUES

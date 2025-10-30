@@ -1,4 +1,4 @@
-"""
+﻿"""
 predictor.py - Preditor de Fraude em Tempo Real com PostgreSQL
 """
 
@@ -12,6 +12,7 @@ import psycopg2
 from psycopg2.extras import RealDictCursor
 import redis
 import json
+import time
 
 # Adicionar src ao path para importar build_features
 sys.path.append(str(Path(__file__).parent.parent / 'src'))
@@ -38,18 +39,31 @@ class FraudPredictor:
         self.scaler = joblib.load(scaler_path)
         self.feature_columns = get_feature_columns()
         
-        # Conectar ao PostgreSQL
-        try:
-            database_url = os.getenv('DATABASE_URL', 'postgresql://fraud_user:fraud_pass_2025@localhost:5432/fraud_db')
-            self.db = psycopg2.connect(database_url)
-            print(f"✅ PostgreSQL conectado: {database_url.split('@')[1]}")
-        except Exception as e:
-            print(f"⚠️  PostgreSQL não disponível: {e}")
-            self.db = None
+        # Conectar ao PostgreSQL com retry
+        self.db = None
+        database_url = os.getenv(
+            'DATABASE_URL',
+            'postgresql://fraud_user:fraud_pass_2025@fraud-postgres:5432/fraud_db'
+        )
+        
+        print(f"🔍 Tentando conectar ao PostgreSQL: {database_url}")
+        
+        # Tentar conectar 5 vezes (aguardar PostgreSQL ficar pronto)
+        for attempt in range(5):
+            try:
+                self.db = psycopg2.connect(database_url)
+                print(f"✅ PostgreSQL conectado: {database_url.split('@')[1]}")
+                break
+            except Exception as e:
+                print(f"⏳ Tentativa {attempt + 1}/5 de conectar ao PostgreSQL...")
+                time.sleep(2)
+        
+        if self.db is None:
+            print(f"⚠️  PostgreSQL não disponível após 5 tentativas")
         
         # Conectar ao Redis (opcional - para cache)
         try:
-            redis_url = os.getenv('REDIS_URL', 'redis://localhost:6379/0')
+            redis_url = os.getenv('REDIS_URL', 'redis://fraud-redis:6379/0')
             self.redis = redis.from_url(redis_url)
             self.redis.ping()
             print(f"✅ Redis conectado: {redis_url}")
@@ -141,7 +155,7 @@ class FraudPredictor:
             ])
             self.db.commit()
             cursor.close()
-            print(f"✅ Transação salva: {transaction_data['user_id']}")
+            # print(f"✅ Transação salva: {transaction_data['user_id']}")
         
         except Exception as e:
             self.db.rollback()
@@ -248,6 +262,12 @@ class FraudPredictor:
     def _classify_risk(self, anomaly_score: float, prediction: int, features: pd.DataFrame) -> tuple:
         """
         Classifica nível de risco baseado em score e features.
+        
+        LÓGICA DE NEGÓCIO:
+        - CRÍTICO: Múltiplos sinais fortes (bloquear e ligar para cliente)
+        - ALTO: Anomalia clara (enviar para fila de análise urgente)
+        - MÉDIO: Anomalia leve (enviar para fila de análise normal)
+        - BAIXO: Normal (aprovar automaticamente)
         """
         # Extrair features críticas com tratamento de NaN
         velocity = float(features['velocity_kmh'].iloc[0]) if not pd.isna(features['velocity_kmh'].iloc[0]) else 0
