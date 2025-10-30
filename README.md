@@ -486,21 +486,27 @@ Predição em lote (múltiplas transações).
 
 **Premissas:**
 - Taxa de fraude real: 0.24% (2.400 fraudes/mês)
-- Prejuízo médio por fraude: R$ 1.500
-- Recall do modelo: 71.6%
+- Prejuízo médio por fraude: R$ 500
+- Recall do modelo: 71.6% (1.718 fraudes detectadas)
+- Taxa de prevenção pós-análise humana: 60%
+- Custo mensal total: R$ 22.650 (AWS + analistas + overhead)
 
 **Resultados:**
 
 | Métrica | Valor |
 |---------|-------|
-| **Fraudes detectadas** | 1.718 fraudes/mês |
-| **Prejuízo evitado** | **R$ 2.577.000/mês** |
-| **Custo AWS (produção)** | R$ 650/mês (~$130) |
-| **ROI** | **~396.000%** |
-| **Falsos positivos** | 8.900 transações (0.89%) |
+| **Fraudes detectadas** | 1.718/mês |
+| **Fraudes efetivamente prevenidas** | 1.031/mês (60% das detectadas) |
+| **Prejuízo evitado** | **R$ 515.500/mês** |
+| **Custo AWS (Mínimo viável)** | ~R$ 785/mês |
+| **Custo AWS (10M tx/mês)** | ~R$ 3.170/mês |
+| **Custo analistas (2 FTE)** |~R$ 20.000/mês |
+| **Custo total** | R$ 22.650/mês |
+| **ROI** | **2.176%** (22x retorno) |
 
-**Trade-off aceitável:** Para cada 1 fraude verdadeira, o sistema gera ~5 falsos positivos que vão para análise humana.
+**Interpretação:** Para cada R$ 1 investido no sistema, a empresa economiza R$ 22 em fraudes evitadas.
 
+**Trade-off:** 8.900 falsos positivos/mês (0.89%) vão para análise humana, gerando custo operacional mas garantindo baixa taxa de falso negativo.
 ---
 
 ## 🛠️ **Tecnologias Utilizadas**
