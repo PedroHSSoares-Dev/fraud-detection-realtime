@@ -375,10 +375,6 @@ docker exec -it fraud-api bash
 
 ## 🏗️ **Arquitetura do Sistema**
 
-### **Arquitetura Local (Docker Compose)**
-
-![Arquitetura Local](docs/architecture-local.png)
-
 **Componentes:**
 - **Flask API (Port 5000):** Endpoints REST para detecção de fraude
 - **PostgreSQL (Port 5433):** Armazena histórico de transações de cada usuário
@@ -397,8 +393,6 @@ docker exec -it fraud-api bash
 ---
 
 ### **Arquitetura de Produção (AWS)**
-
-![Arquitetura AWS](docs/architecture-aws.png)
 
 **Componentes AWS:**
 
@@ -618,7 +612,32 @@ Predição em lote (múltiplas transações).
 
 **Interpretação:** Para cada R$ 1 investido no sistema, a empresa economiza R$ 22 em fraudes evitadas.
 
-**Trade-off aceitável:** 8.900 falsos positivos/mês (0.89%) vão para análise humana, gerando custo operacional mas garantindo baixa taxa de falso negativo.
+---
+
+## ⚖️ **Trade-offs do Modelo**
+
+O modelo foi otimizado para **maximizar recall** (detectar fraudes) em vez de precision (minimizar falsos positivos).
+
+**Por quê?**
+
+Em detecção de fraude, o custo de **deixar passar uma fraude** (R$ 500) é **250x maior** que o custo de **analisar um falso positivo** (R$ 2).
+
+**Métricas:**
+- **Recall: 71.6%** ✅ Detecta 358/500 fraudes
+- **Precision: 16.8%** ⚠️ 1.781 falsos positivos (0.89% das transações)
+- **F1-Score: 0.27** (balanceamento recall/precision)
+
+**Interpretação:**
+Para cada 100 alertas do sistema:
+- 17 são fraudes reais (devem ser bloqueadas)
+- 83 são clientes legítimos (devem ser aprovados após análise)
+
+**Trade-off aceitável:** Preferimos analisar 8.900 transações/mês (falsos positivos) do que deixar passar 142 fraudes/mês adicionais (R$ 71k em prejuízo).
+
+**Melhorias possíveis:**
+- Modelo supervisionado (XGBoost) → Precision ~60-70%
+- Ensemble com regras de negócio → Precision crítica ~90%
+- Ajuste de threshold → Balancear precision/recall conforme negócio
 
 ---
 
