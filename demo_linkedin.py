@@ -433,11 +433,12 @@ def demo_summary():
     
     business_metrics = [
         ("Fraudes Detectadas", "1.718/mês", Fore.GREEN),
-        ("Fraudes efetivamente prevenidas", "1.031/mês (60% das detectadas)"),
+        ("Fraudes Prevenidas (60% pós-análise)", "1.031/mês", Fore.GREEN),
         ("Prejuízo Evitado", "R$ 515.500/mês", Fore.GREEN),
-        ("ROI", "2.176% (22x retorno)", Fore.GREEN),
-        ("Custo AWS (produção)", "~R$ 785/mês", Fore.CYAN),
-        ("Custo AWS (10M tx/mês)", "~R$ 3.170/mês", Fore.CYAN)
+        ("Custo AWS (mínimo viável)", "R$ 785/mês", Fore.CYAN),
+        ("Custo Analistas (2 FTE)", "R$ 20.000/mês", Fore.CYAN),
+        ("Custo Total Operacional", "R$ 22.650/mês", Fore.CYAN),
+        ("ROI", "2.176% (22x)", Fore.GREEN)
     ]
     
     for metric, value, color in business_metrics:
