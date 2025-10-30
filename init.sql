@@ -68,6 +68,45 @@ INSERT INTO transactions (user_id, amount, merchant_name, merchant_category, lat
 ('user_batch_002', 200.00, 'Shopping', 'retail', -23.5505, -46.6333, NOW() - INTERVAL '3 days'),
 ('user_batch_002', 180.00, 'Posto', 'gas_station', -23.5505, -46.6333, NOW() - INTERVAL '2 days');
 
+-- ============================================================================
+-- USUÁRIOS EXCLUSIVOS PARA DEMONSTRAÇÃO (demo_linkedin.py)
+-- ============================================================================
+
+-- USER DEMO 1: user_demo_normal (Para transação normal)
+-- Perfil: Comportamento consistente em São Paulo, gasta R$ 150-250
+INSERT INTO transactions (user_id, amount, merchant_name, merchant_category, latitude, longitude, timestamp) VALUES
+('user_demo_normal', 180.00, 'Supermercado Zona Sul', 'grocery', -23.5505, -46.6333, NOW() - INTERVAL '10 days'),
+('user_demo_normal', 200.00, 'Posto Ipiranga', 'gas_station', -23.5505, -46.6333, NOW() - INTERVAL '9 days'),
+('user_demo_normal', 160.00, 'Farmácia Pague Menos', 'pharmacy', -23.5505, -46.6333, NOW() - INTERVAL '8 days'),
+('user_demo_normal', 220.00, 'Restaurante Outback', 'food', -23.5505, -46.6333, NOW() - INTERVAL '7 days'),
+('user_demo_normal', 190.00, 'Supermercado Extra', 'grocery', -23.5505, -46.6333, NOW() - INTERVAL '6 days'),
+('user_demo_normal', 170.00, 'Padaria Bella Vista', 'food', -23.5505, -46.6333, NOW() - INTERVAL '5 days'),
+('user_demo_normal', 210.00, 'Shopping Iguatemi', 'retail', -23.5505, -46.6333, NOW() - INTERVAL '4 days'),
+('user_demo_normal', 185.00, 'Restaurante Figueira', 'food', -23.5505, -46.6333, NOW() - INTERVAL '3 days'),
+('user_demo_normal', 195.00, 'Supermercado Carrefour', 'grocery', -23.5505, -46.6333, NOW() - INTERVAL '2 days'),
+('user_demo_normal', 175.00, 'Farmácia Drogasil', 'pharmacy', -23.5505, -46.6333, NOW() - INTERVAL '1 day');
+
+-- USER DEMO 2: user_demo_teleport (Para demonstração de teleporte)
+-- Perfil: Comportamento normal em São Paulo, vai "viajar" para Tóquio
+INSERT INTO transactions (user_id, amount, merchant_name, merchant_category, latitude, longitude, timestamp) VALUES
+('user_demo_teleport', 250.00, 'Restaurante Jardins', 'food', -23.5505, -46.6333, NOW() - INTERVAL '8 days'),
+('user_demo_teleport', 180.00, 'Supermercado', 'grocery', -23.5505, -46.6333, NOW() - INTERVAL '7 days'),
+('user_demo_teleport', 220.00, 'Shopping', 'retail', -23.5505, -46.6333, NOW() - INTERVAL '6 days'),
+('user_demo_teleport', 190.00, 'Posto', 'gas_station', -23.5505, -46.6333, NOW() - INTERVAL '5 days'),
+('user_demo_teleport', 270.00, 'Restaurante', 'food', -23.5505, -46.6333, NOW() - INTERVAL '4 days'),
+('user_demo_teleport', 200.00, 'Farmácia', 'pharmacy', -23.5505, -46.6333, NOW() - INTERVAL '3 days'),
+('user_demo_teleport', 240.00, 'Restaurante Fasano', 'food', -23.5505, -46.6333, NOW() - INTERVAL '2 days'),
+('user_demo_teleport', 210.00, 'Supermercado', 'grocery', -23.5505, -46.6333, NOW() - INTERVAL '1 day');
+
+-- USER DEMO 3: user_demo_fraudster (Para demonstração de card testing)
+-- Perfil: Comportamento normal, mas vai fazer card testing
+INSERT INTO transactions (user_id, amount, merchant_name, merchant_category, latitude, longitude, timestamp) VALUES
+('user_demo_fraudster', 150.00, 'Supermercado', 'grocery', -23.5505, -46.6333, NOW() - INTERVAL '6 days'),
+('user_demo_fraudster', 180.00, 'Restaurante', 'food', -23.5505, -46.6333, NOW() - INTERVAL '5 days'),
+('user_demo_fraudster', 120.00, 'Farmácia', 'pharmacy', -23.5505, -46.6333, NOW() - INTERVAL '4 days'),
+('user_demo_fraudster', 160.00, 'Posto', 'gas_station', -23.5505, -46.6333, NOW() - INTERVAL '3 days'),
+('user_demo_fraudster', 140.00, 'Supermercado', 'grocery', -23.5505, -46.6333, NOW() - INTERVAL '2 days');
+
 -- Mensagem de sucesso
 DO $$
 BEGIN

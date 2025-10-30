@@ -184,7 +184,7 @@ def demo_normal_transaction():
     sleep(1)
     
     transaction = {
-        "user_id": "user_traveler_001",
+        "user_id": "user_demo_normal",
         "amount": 200.00,
         "merchant_name": "Restaurante Figueira Rubaiyat",
         "merchant_category": "food",
@@ -240,7 +240,7 @@ def demo_teleport_fraud(previous_transaction):
     print()
     
     transaction = {
-        "user_id": "user_traveler_001",
+        "user_id": "user_demo_teleport",
         "amount": 300.00,
         "merchant_name": "Restaurante Sukiyabashi Jiro",
         "merchant_category": "food",
@@ -331,7 +331,7 @@ def demo_card_testing():
         print(f"└─ ⏰ {datetime.now().strftime('%H:%M:%S')}{Style.RESET_ALL}")
         
         transaction = {
-            "user_id": "user_fraudster_001",
+            "user_id": "user_demo_fraudster",
             "amount": amount,
             "merchant_name": merchant,
             "merchant_category": category,
@@ -433,9 +433,11 @@ def demo_summary():
     
     business_metrics = [
         ("Fraudes Detectadas", "1.718/mês", Fore.GREEN),
-        ("Prejuízo Evitado", "R$ 2.577.000/mês", Fore.GREEN),
-        ("ROI", "396.000%", Fore.GREEN),
-        ("Custo AWS (produção)", "~R$ 650/mês", Fore.CYAN)
+        ("Fraudes efetivamente prevenidas", "1.031/mês (60% das detectadas)")
+        ("Prejuízo Evitado", "R$ 515.500/mês", Fore.GREEN),
+        ("ROI", "2.176% (22x retorno)", Fore.GREEN),
+        ("Custo AWS (produção)", "~R$ 785/mês", Fore.CYAN)
+        ("Custo AWS (10M tx/mês)", "~R$ 3.170/mês", Fore.CYAN)
     ]
     
     for metric, value, color in business_metrics:
@@ -447,9 +449,9 @@ def print_closing():
     print_separator("═", 70, Fore.MAGENTA)
     
     print(f"\n{Fore.CYAN}{Style.BRIGHT}🔗 LINKS E CONTATO:{Style.RESET_ALL}")
-    print(f"\n   {Fore.CYAN}GitHub:{Fore.WHITE} github.com/seu-usuario/fraud-detection-realtime")
-    print(f"   {Fore.CYAN}LinkedIn:{Fore.WHITE} linkedin.com/in/seu-perfil")
-    print(f"   {Fore.CYAN}Email:{Fore.WHITE} seu-email@exemplo.com")
+    print(f"\n   {Fore.CYAN}GitHub:{Fore.WHITE} https://github.com/PedroHSSoares-Dev/fraud-detection-realtime")
+    print(f"   {Fore.CYAN}LinkedIn:{Fore.WHITE} https://www.linkedin.com/in/pedrohssoares/")
+    print(f"   {Fore.CYAN}Email:{Fore.WHITE} pedrohssoares@live.com")
     
     print(f"\n{Fore.YELLOW}{Style.BRIGHT}💬 O QUE VOCÊ ACHOU?{Style.RESET_ALL}")
     print(f"   {Fore.CYAN}• Que tipo de fraude seria mais difícil de detectar?")
