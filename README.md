@@ -18,6 +18,7 @@
 - ✅ **71.6% recall** no modelo (358/500 fraudes detectadas)
 - ✅ **API REST Flask** com PostgreSQL para histórico de transações
 - ✅ **Docker Compose** para orquestração completa
+- ✅ **Script de demonstração profissional** (`demo_linkedin.py`) com animações
 - ✅ **100% dos testes passando** (7/7 testes end-to-end)
 
 ---
@@ -56,54 +57,125 @@
 ### **Pré-requisitos**
 
 - [Docker Desktop](https://www.docker.com/products/docker-desktop) instalado e rodando
+- [Python 3.11+](https://www.python.org/downloads/) instalado
 - [Git](https://git-scm.com/) instalado
-- [Python 3.11+](https://www.python.org/downloads/) (apenas para executar testes locais)
 
 ---
 
-### **Passo 1: Clone o Repositório**
+### **Execução Rápida (Demonstração Completa)**
 ```bash
+# 1. Clone o repositório (inclui modelos pré-treinados)
 git clone https://github.com/seu-usuario/fraud-detection-realtime.git
 cd fraud-detection-realtime
-```
 
----
-
-### **Passo 2: Inicie os Serviços com Docker Compose**
-```bash
-# Subir todos os serviços (API + PostgreSQL + Redis)
+# 2. Inicie os serviços (API + PostgreSQL + Redis)
 docker-compose up -d
 
-# Ver logs em tempo real
-docker-compose logs -f
+# Aguardar ~10 segundos para inicialização
+# Verificar logs: docker-compose logs -f
+
+# 3. Instale dependências da demo
+pip install colorama requests tqdm
+
+# 4. Execute a demonstração profissional
+python demo_linkedin.py
 ```
 
-**Aguarde até ver esta mensagem nos logs:**
+**Resultado esperado (~90 segundos):**
 ```
-fraud-api | ✅ PostgreSQL conectado: postgres:5432/fraud_db
-fraud-api | ✅ Redis conectado: redis://redis:6379/0
-fraud-api | Modelo carregado: /app/models/isolation_forest.joblib
-fraud-api | Preditor inicializado com sucesso
+    ███████╗██████╗  █████╗ ██╗   ██╗██████╗ 
+    ██╔════╝██╔══██╗██╔══██╗██║   ██║██╔══██╗
+    █████╗  ██████╔╝███████║██║   ██║██║  ██║
+    
+[PASSO 1] ✅ API está rodando!
+
+[PASSO 2] Transação Normal → BAIXO (APROVADA)
+
+[PASSO 3] Teleporte (SP→Tokyo) → CRÍTICO (BLOQUEADA)
+🚨 Velocidade: 10.000 km/h - FISICAMENTE IMPOSSÍVEL!
+
+[PASSO 4] Card Testing → ALTO (ANÁLISE HUMANA)
+⚠️  3 merchants diferentes detectados
+
+📊 RESUMO: 71.6% recall | ROI: 22x | R$ 515k/mês economizados
 ```
 
-**Pressione `Ctrl+C` para sair dos logs.**
+A demo executa **3 cenários** de detecção de fraude em tempo real:
+1. **Transação normal** (usuário `user_demo_normal`) → Aprovada automaticamente
+2. **Teleporte** (usuário `user_demo_teleport`: SP → Tokyo em 30 min) → Bloqueada
+3. **Card testing** (usuário `user_demo_fraudster`: 3 micro-transações) → Análise humana
+
+**Nota:** Os usuários de demonstração estão pré-cadastrados no banco (`init.sql`) com histórico de transações consistente.
 
 ---
 
-### **Passo 3: Teste a API**
+### **Retreinar o Modelo (Opcional)**
 
-#### **3.1. Health Check (via navegador ou curl)**
+Se você quiser treinar o modelo do zero com seus próprios dados:
 ```bash
-# Linux/Mac
-curl http://localhost:5000/health
+# 1. Criar ambiente virtual (recomendado)
+python -m venv fraud-env
+source fraud-env/bin/activate  # Linux/Mac
+fraud-env\Scripts\activate     # Windows
 
-# Windows (PowerShell)
-Invoke-WebRequest -Uri http://localhost:5000/health
+# 2. Instalar dependências completas
+pip install -r requirements.txt
+
+# 3. Executar pipeline completo
+python src/data/generate_data.py           # Gera 300k transações (~2 min)
+python src/features/build_features.py      # Feature engineering (~3 min)
+cd models
+python train_model.py                      # Treina modelo (~2 min)
+python evaluate_model.py                   # Avalia performance (~1 min)
+cd ..
+
+# 4. Reiniciar API com novo modelo
+docker-compose restart api
 ```
 
-**Ou abra no navegador:** [http://localhost:5000/health](http://localhost:5000/health)
+**Tempo total:** ~8-10 minutos
 
-**Resposta esperada:**
+**Resultado:**
+- `data/raw/transactions_with_fraud.csv` (300.135 transações)
+- `data/processed/transactions_with_features.csv` (com 17 features)
+- `models/isolation_forest.joblib` (modelo retreinado)
+- `models/scaler.joblib` (StandardScaler atualizado)
+- `reports/figures/` (novos gráficos de performance)
+
+---
+
+### **Testes Automatizados (Opcional)**
+```bash
+# Executar bateria completa de testes
+pip install requests
+python test_api.py
+```
+
+**Resultado esperado:**
+```
+✅ Testes Passaram: 7/7
+📊 Taxa de Sucesso: 100.0%
+
+Testes executados:
+1. ✅ Health Check
+2. ✅ Transação Normal (BAIXO risco)
+3. ✅ Card Testing (ALTO risco)
+4. ✅ Teleporte (CRÍTICO)
+5. ✅ Gasto Súbito (MÉDIO/ALTO risco)
+6. ✅ Validação de Entrada (erro 400)
+7. ✅ Predição em Lote
+```
+
+---
+
+### **Testes Manuais (API via curl)**
+
+#### **Health Check:**
+```bash
+curl http://localhost:5000/health
+```
+
+**Response:**
 ```json
 {
   "status": "healthy",
@@ -114,21 +186,21 @@ Invoke-WebRequest -Uri http://localhost:5000/health
 
 ---
 
-#### **3.2. Predição de Fraude (exemplo: transação normal)**
+#### **Predição de Fraude (Normal):**
 ```bash
 curl -X POST http://localhost:5000/predict \
   -H "Content-Type: application/json" \
   -d '{
-    "user_id": "user_normal_001",
+    "user_id": "user_demo_normal",
     "amount": 150.00,
-    "merchant_name": "Supermercado Pão de Açúcar",
+    "merchant_name": "Supermercado Extra",
     "merchant_category": "grocery",
     "latitude": -23.5505,
     "longitude": -46.6333
   }'
 ```
 
-**Resposta esperada:**
+**Response:**
 ```json
 {
   "anomaly_score": 0.05,
@@ -147,13 +219,13 @@ curl -X POST http://localhost:5000/predict \
 
 ---
 
-#### **3.3. Exemplo: Detecção de Teleporte (CRÍTICO)**
+#### **Predição de Fraude (Teleporte):**
 ```bash
 # Primeira transação em São Paulo
 curl -X POST http://localhost:5000/predict \
   -H "Content-Type: application/json" \
   -d '{
-    "user_id": "user_traveler_001",
+    "user_id": "user_demo_teleport",
     "amount": 200.00,
     "merchant_name": "Restaurante SP",
     "merchant_category": "food",
@@ -164,11 +236,11 @@ curl -X POST http://localhost:5000/predict \
 # Aguardar 2 segundos
 sleep 2
 
-# Segunda transação em Tóquio (30 minutos depois - IMPOSSÍVEL!)
+# Segunda transação em Tóquio (impossível!)
 curl -X POST http://localhost:5000/predict \
   -H "Content-Type: application/json" \
   -d '{
-    "user_id": "user_traveler_001",
+    "user_id": "user_demo_teleport",
     "amount": 300.00,
     "merchant_name": "Restaurante Tokyo",
     "merchant_category": "food",
@@ -177,7 +249,7 @@ curl -X POST http://localhost:5000/predict \
   }'
 ```
 
-**Resposta esperada (FRAUDE DETECTADA):**
+**Response (FRAUDE DETECTADA):**
 ```json
 {
   "anomaly_score": -0.45,
@@ -185,7 +257,7 @@ curl -X POST http://localhost:5000/predict \
   "risk_level": "CRÍTICO",
   "recommendation": "BLOQUEAR transação e LIGAR para cliente imediatamente",
   "features": {
-    "velocity_kmh": 18500.5,  // ← Velocidade impossível!
+    "velocity_kmh": 18500.5,
     "distance_from_home_km": 18400.2,
     "spending_zscore": 1.2,
     "tx_count_1h": 2,
@@ -196,59 +268,34 @@ curl -X POST http://localhost:5000/predict \
 
 ---
 
-### **Passo 4: Execute a Bateria de Testes Completa**
-```bash
-# Instalar biblioteca de requisições HTTP
-pip install requests
-
-# Executar todos os testes (7 testes)
-python test_api.py
-```
-
-**Resultado esperado:**
-```
-================================================================================
-🧪 RESUMO DOS TESTES
-================================================================================
-
-✅ Testes Passaram: 7/7
-❌ Testes Falharam: 0/7
-📊 Taxa de Sucesso: 100.0%
-
-🎉 TODOS OS TESTES PASSARAM! API está funcionando perfeitamente!
-```
-
-**Testes executados:**
-1. ✅ Health Check
-2. ✅ Transação Normal (BAIXO risco)
-3. ✅ Card Testing (ALTO risco)
-4. ✅ Teleporte (CRÍTICO)
-5. ✅ Gasto Súbito (MÉDIO/ALTO risco)
-6. ✅ Validação de Entrada (erro 400)
-7. ✅ Predição em Lote
-
----
-
-### **Passo 5: Explorar o Banco de Dados (Opcional)**
+### **Explorar o Banco de Dados (Opcional)**
 ```bash
 # Conectar ao PostgreSQL
 docker exec -it fraud-postgres psql -U fraud_user -d fraud_db
 
-# Dentro do PostgreSQL, executar queries:
+# Dentro do PostgreSQL:
 
 # Ver total de transações
 SELECT COUNT(*) FROM transactions;
 
-# Ver transações por usuário
+# Ver transações por usuário (top 10)
 SELECT user_id, COUNT(*) as total 
 FROM transactions 
 GROUP BY user_id 
-ORDER BY total DESC;
+ORDER BY total DESC 
+LIMIT 10;
 
-# Ver últimas 5 transações
+# Ver últimas 5 transações de um usuário
 SELECT * FROM transactions 
+WHERE user_id = 'user_demo_normal'
 ORDER BY timestamp DESC 
 LIMIT 5;
+
+# Ver usuários de demonstração
+SELECT user_id, COUNT(*) as total_transactions
+FROM transactions 
+WHERE user_id LIKE 'user_demo_%'
+GROUP BY user_id;
 
 # Sair
 \q
@@ -256,27 +303,73 @@ LIMIT 5;
 
 ---
 
-### **Comandos Úteis**
+### **Comandos Úteis do Docker**
 ```bash
 # Ver status dos containers
 docker-compose ps
 
+# Ver logs em tempo real (todos os serviços)
+docker-compose logs -f
+
+# Ver logs de um serviço específico
+docker-compose logs -f api
+docker-compose logs -f postgres
+docker-compose logs -f redis
+
 # Parar todos os serviços
 docker-compose down
 
-# Parar e remover volumes (limpar banco de dados)
+# Parar e remover volumes (limpa banco de dados)
 docker-compose down -v
-
-# Ver logs de um serviço específico
-docker-compose logs api
-docker-compose logs postgres
 
 # Reiniciar serviços
 docker-compose restart
 
+# Reiniciar serviço específico
+docker-compose restart api
+
 # Rebuild após modificar código
 docker-compose up --build -d
+
+# Ver uso de recursos (CPU, RAM)
+docker stats
+
+# Executar comando dentro do container
+docker exec -it fraud-api bash
 ```
+
+---
+
+### **Gravação de Vídeo da Demo (Para LinkedIn/Portfólio)**
+
+**Preparação:**
+
+1. **Terminal:**
+   - Usar **Windows Terminal** (melhor suporte a cores)
+   - Modo tela cheia: `F11`
+   - Aumentar fonte: `Ctrl + +` (até 16-18pt)
+
+2. **OBS Studio (recomendado):**
+   - Download: [obsproject.com](https://obsproject.com/)
+   - Fonte: "Captura de Janela" → Windows Terminal
+   - Resolução: 1920x1080, 30fps
+
+3. **Ajustar velocidade (opcional):**
+```python
+   # Editar linha 24 de demo_linkedin.py
+   SPEED = 1.0   # Normal (~90 segundos)
+   SPEED = 0.7   # Lento (melhor para narração)
+   SPEED = 1.5   # Rápido (dinâmico para LinkedIn)
+```
+
+4. **Executar:**
+```bash
+   python demo_linkedin.py
+```
+
+5. **Edição (opcional):**
+   - **CapCut** (grátis): Adicionar música, textos, cortes
+   - **DaVinci Resolve** (grátis): Edição profissional
 
 ---
 
@@ -318,7 +411,13 @@ docker-compose up --build -d
 | **ECR** | Container Registry | Armazenar imagens Docker |
 | **CloudWatch** | Monitoring | Logs, métricas, alertas |
 
-**Custo Estimado:** ~$130/mês (após Free Tier) | **Free Tier:** $0/mês (primeiros 12 meses)
+**Custo Estimado AWS:**
+
+| Cenário | Custo Mensal |
+|---------|--------------|
+| **Free Tier (12 meses)** | R$ 0/mês |
+| **Mínimo Viável (1M tx/mês)** | ~R$ 785/mês (~$157) |
+| **Produção Séria (10M tx/mês)** | ~R$ 3.170/mês (~$634) |
 
 ---
 
@@ -350,9 +449,10 @@ fraud-detection-realtime/
 │   └── figures/                      # Gráficos e visualizações
 ├── docker-compose.yml                # Orquestração (API + PostgreSQL + Redis)
 ├── Dockerfile                        # Container da API
-├── init.sql                          # Schema + dados de exemplo
+├── init.sql                          # Schema + dados de exemplo + users demo
 ├── requirements.txt                  # Dependências completas (dev)
 ├── requirements-api.txt              # Dependências da API (produção)
+├── demo_linkedin.py                  # Script de demonstração profissional
 ├── test_api.py                       # Testes end-to-end
 └── README.md
 ```
@@ -394,6 +494,18 @@ O sistema utiliza **17 features contextuais** que capturam desvios de comportame
 
 ### **GET /**
 Informações básicas da API.
+
+**Response:**
+```json
+{
+  "service": "Fraud Detection API",
+  "version": "1.0.0",
+  "status": "running",
+  "model_loaded": true
+}
+```
+
+---
 
 ### **GET /health**
 Health check detalhado.
@@ -498,15 +610,16 @@ Predição em lote (múltiplas transações).
 | **Fraudes detectadas** | 1.718/mês |
 | **Fraudes efetivamente prevenidas** | 1.031/mês (60% das detectadas) |
 | **Prejuízo evitado** | **R$ 515.500/mês** |
-| **Custo AWS (Mínimo viável)** | ~R$ 785/mês |
-| **Custo AWS (10M tx/mês)** | ~R$ 3.170/mês |
-| **Custo analistas (2 FTE)** |~R$ 20.000/mês |
-| **Custo total** | R$ 22.650/mês |
+| **Custo AWS (Mínimo viável)** | R$ 785/mês |
+| **Custo AWS (10M tx/mês)** | R$ 3.170/mês |
+| **Custo analistas (2 FTE)** | R$ 20.000/mês |
+| **Custo total (operacional)** | R$ 22.650/mês |
 | **ROI** | **2.176%** (22x retorno) |
 
 **Interpretação:** Para cada R$ 1 investido no sistema, a empresa economiza R$ 22 em fraudes evitadas.
 
-**Trade-off:** 8.900 falsos positivos/mês (0.89%) vão para análise humana, gerando custo operacional mas garantindo baixa taxa de falso negativo.
+**Trade-off aceitável:** 8.900 falsos positivos/mês (0.89%) vão para análise humana, gerando custo operacional mas garantindo baixa taxa de falso negativo.
+
 ---
 
 ## 🛠️ **Tecnologias Utilizadas**
@@ -518,6 +631,7 @@ Predição em lote (múltiplas transações).
 | **Database** | PostgreSQL 15, Redis 7, psycopg2 2.9.9 |
 | **DevOps** | Docker, Docker Compose, Git |
 | **Data Generation** | Faker 37.12.0, geopy 2.4.1 |
+| **Visualization** | colorama, tqdm (demo script) |
 
 ---
 
